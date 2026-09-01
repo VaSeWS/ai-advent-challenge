@@ -12,7 +12,7 @@ import (
 
 const (
 	groqEndpoint = "https://api.groq.com/openai/v1/chat/completions"
-	groqModel    = "llama-3.3-70b-versatile"
+	groqModel    = "openai/gpt-oss-20b"
 )
 
 type chatMessage struct {
