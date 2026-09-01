@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,21 +15,49 @@ const (
 	groqEndpoint = "https://api.groq.com/openai/v1/chat/completions"
 	groqModel    = "openai/gpt-oss-20b"
 
-	formatSystemPrompt = "Respond with exactly 3 short bullet points, plain text, no markdown headers, " +
-		"no more than 200 characters total. Stop immediately after the third bullet point - write nothing else."
-	maxTokensCap = 200
+	defaultMaxTokens = 600
+	defaultReasoning = "low"
 )
+
+// bulletsSchema enforces a strict JSON response of exactly 3 short bullet points.
+// strict:true requires every property listed in "required" and additionalProperties:false.
+var bulletsSchema = map[string]any{
+	"type": "object",
+	"properties": map[string]any{
+		"bullets": map[string]any{
+			"type":     "array",
+			"items":    map[string]any{"type": "string"},
+			"minItems": 3,
+			"maxItems": 3,
+		},
+	},
+	"required":             []string{"bullets"},
+	"additionalProperties": false,
+}
 
 type chatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
+type jsonSchema struct {
+	Name   string         `json:"name"`
+	Strict bool           `json:"strict"`
+	Schema map[string]any `json:"schema"`
+}
+
+type responseFormat struct {
+	Type       string     `json:"type"`
+	JSONSchema jsonSchema `json:"json_schema"`
+}
+
 type chatRequest struct {
-	Model           string        `json:"model"`
-	Messages        []chatMessage `json:"messages"`
-	MaxTokens       int           `json:"max_tokens,omitempty"`
-	ReasoningEffort string        `json:"reasoning_effort,omitempty"`
+	Model           string          `json:"model"`
+	Messages        []chatMessage   `json:"messages"`
+	MaxTokens       int             `json:"max_tokens,omitempty"`
+	Stop            string          `json:"stop,omitempty"`
+	ReasoningEffort string          `json:"reasoning_effort,omitempty"`
+	ResponseFormat  *responseFormat `json:"response_format,omitempty"`
 }
 
 type chatResponse struct {
@@ -38,11 +67,22 @@ type chatResponse struct {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: day-02 <prompt>")
+	maxTokens := flag.Int("max-tokens", defaultMaxTokens, "max response length in tokens")
+	stop := flag.String("stop", "", "stop sequence (empty = none)")
+	reasoning := flag.String("reasoning", defaultReasoning, "reasoning effort: low, medium, high, or off (off = omit the param, model default)")
+	flag.Parse()
+
+	if flag.NArg() < 1 {
+		fmt.Fprintln(os.Stderr, "usage: day-02 [-max-tokens N] [-stop STR] [-reasoning low|medium|high|off] <prompt>")
 		os.Exit(1)
 	}
-	prompt := strings.Join(os.Args[1:], " ")
+	prompt := strings.Join(flag.Args(), " ")
+
+	reasoningEffort, err := resolveReasoning(*reasoning)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
 
 	apiKey := os.Getenv("GROQ_API_KEY")
 	if apiKey == "" {
@@ -64,11 +104,19 @@ func main() {
 	constrained, err := ask(apiKey, chatRequest{
 		Model: groqModel,
 		Messages: []chatMessage{
-			{Role: "system", Content: formatSystemPrompt},
 			{Role: "user", Content: prompt},
 		},
-		MaxTokens:       maxTokensCap,
-		ReasoningEffort: "low",
+		MaxTokens:       *maxTokens,
+		Stop:            *stop,
+		ReasoningEffort: reasoningEffort,
+		ResponseFormat: &responseFormat{
+			Type: "json_schema",
+			JSONSchema: jsonSchema{
+				Name:   "bullets_response",
+				Strict: true,
+				Schema: bulletsSchema,
+			},
+		},
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -78,8 +126,21 @@ func main() {
 	fmt.Println("=== Without constraints ===")
 	fmt.Println(unconstrained)
 	fmt.Println()
-	fmt.Println("=== With constraints (format + length + stop) ===")
+	fmt.Println("=== With constraints (strict JSON schema + length + stop) ===")
 	fmt.Println(constrained)
+}
+
+// resolveReasoning maps the -reasoning flag to the API's reasoning_effort value.
+// "off" returns "" so the field is omitted from the request (json:"omitempty").
+func resolveReasoning(value string) (string, error) {
+	switch value {
+	case "low", "medium", "high":
+		return value, nil
+	case "off":
+		return "", nil
+	default:
+		return "", fmt.Errorf("invalid -reasoning value %q: must be low, medium, high, or off", value)
+	}
 }
 
 func ask(apiKey string, request chatRequest) (string, error) {
