@@ -13,11 +13,64 @@ const (
 	groqEndpoint = "https://api.groq.com/openai/v1/chat/completions"
 	groqModel    = "openai/gpt-oss-20b"
 
-	// Fixed task: LeetCode 300 (Longest Increasing Subsequence), classic array,
-	// known correct answer (4) so every method's output can be checked exactly.
-	task = "Дан массив целых чисел nums = [10, 9, 2, 5, 3, 7, 101, 18].\n" +
-		"Найди длину самой длинной строго возрастающей подпоследовательности " +
-		"(Longest Increasing Subsequence). Ответ должен быть одним числом."
+	// Fixed task: LeetCode 3904 (Smallest Stable Index II). Correct algorithm is
+	// well-defined (prefix-max + suffix-min arrays, then a linear scan), so each
+	// method's code can be checked for correctness against known edge cases.
+	task = `Реши следующую алгоритмическую задачу и верни код решения на Python: функция
+def stable_index(nums: list[int], k: int) -> int:
+Требование: код должен работать за O(n) по времени (n до 10^5), без пересчёта
+max/min с нуля на каждом индексе.
+
+Задача (LeetCode 3904, Smallest Stable Index II):
+
+You are given an integer array nums of length n and an integer k.
+
+For each index i, define its instability score as max(nums[0..i]) - min(nums[i..n - 1]).
+
+In other words:
+max(nums[0..i]) is the largest value among the elements from index 0 to index i.
+min(nums[i..n - 1]) is the smallest value among the elements from index i to index n - 1.
+An index i is called stable if its instability score is less than or equal to k.
+
+Return the smallest stable index. If no such index exists, return -1.
+
+Example 1:
+Input: nums = [5,0,1,4], k = 3
+Output: 3
+Explanation:
+At index 0: The maximum in [5] is 5, and the minimum in [5, 0, 1, 4] is 0, so the instability score is 5 - 0 = 5.
+At index 1: The maximum in [5, 0] is 5, and the minimum in [0, 1, 4] is 0, so the instability score is 5 - 0 = 5.
+At index 2: The maximum in [5, 0, 1] is 5, and the minimum in [1, 4] is 1, so the instability score is 5 - 1 = 4.
+At index 3: The maximum in [5, 0, 1, 4] is 5, and the minimum in [4] is 4, so the instability score is 5 - 4 = 1.
+This is the first index with an instability score less than or equal to k = 3. Thus, the answer is 3.
+
+Example 2:
+Input: nums = [3,2,1], k = 1
+Output: -1
+Explanation:
+At index 0, the instability score is 3 - 1 = 2.
+At index 1, the instability score is 3 - 1 = 2.
+At index 2, the instability score is 3 - 1 = 2.
+None of these values is less than or equal to k = 1, so the answer is -1.
+
+Example 3:
+Input: nums = [0], k = 0
+Output: 0
+Explanation:
+At index 0, the instability score is 0 - 0 = 0, which is less than or equal to k = 0. Therefore, the answer is 0.
+
+Constraints:
+1 <= nums.length <= 10^5
+0 <= nums[i] <= 10^9
+0 <= k <= 10^9
+
+Будь краток: обоснование не длиннее нескольких предложений, без формальных
+доказательств теорем. Код функции обязателен и должен быть полным.`
+
+	// Groq free tier caps this model at 8000 tokens/minute; without a cap
+	// responses ran to 5-6k tokens each (formal proofs) and blew the budget
+	// after 1-2 of the 7 calls this program makes.
+	maxTokensPerCall = 900
 )
 
 type chatMessage struct {
@@ -26,8 +79,9 @@ type chatMessage struct {
 }
 
 type chatRequest struct {
-	Model    string        `json:"model"`
-	Messages []chatMessage `json:"messages"`
+	Model     string        `json:"model"`
+	Messages  []chatMessage `json:"messages"`
+	MaxTokens int           `json:"max_tokens,omitempty"`
 }
 
 type chatResponse struct {
@@ -50,7 +104,7 @@ func main() {
 	printSection("1) Прямой ответ (без инструкций)", direct)
 
 	stepByStep, err := ask(apiKey, []chatMessage{
-		{Role: "user", Content: task + "\n\nРешай пошагово: распиши ход рассуждений перед финальным ответом."},
+		{Role: "user", Content: task + "\n\nРешай пошагово: распиши ход рассуждений перед финальным кодом."},
 	})
 	fatalIf(err)
 	printSection("2) Пошаговое рассуждение", stepByStep)
@@ -98,8 +152,9 @@ func printSection(title, body string) {
 
 func ask(apiKey string, messages []chatMessage) (string, error) {
 	reqBody, err := json.Marshal(chatRequest{
-		Model:    groqModel,
-		Messages: messages,
+		Model:     groqModel,
+		Messages:  messages,
+		MaxTokens: maxTokensPerCall,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to build request body: %w", err)
