@@ -11,3 +11,10 @@
 
 .env
 .env.local
+
+.claude/worktrees/
+.claude/settings.local.json
+
+# Recordings — the demo scripts are committed, the videos are not.
+week-*/day-*/video/*.mp4
+week-*/day-*/video/*.mov
