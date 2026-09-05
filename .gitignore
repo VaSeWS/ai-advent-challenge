@@ -15,6 +15,9 @@
 .claude/worktrees/
 .claude/settings.local.json
 
+# skill-creator eval runs
+.claude/skills/*-workspace/
+
 # Recordings — the demo scripts are committed, the videos are not.
 week-*/day-*/video/*.mp4
 week-*/day-*/video/*.mov

@@ -1,0 +1,104 @@
+{
+  "skill_name": "record-task-demo",
+  "evals": [
+    {
+      "id": 0,
+      "name": "plan-gate-day2",
+      "prompt": "Сделай видео для задания дня 2",
+      "expected_output": "A shot plan in the skill's template, presented for approval, with no recording started. If a demo script is drafted it uses demolib helpers, runs the day-2 binary with and without constraints, and shows no source code.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "plan-before-recording",
+          "text": "Stops for approval before recording — no .mp4 produced, no record.sh/screencapture/osascript run"
+        },
+        {
+          "id": "plan-template",
+          "text": "Plan follows the skill template: 'План видео', a numbered 'Кадры' list, a duration estimate and the target file"
+        },
+        {
+          "id": "yandex-path-convention",
+          "text": "Plan names the remote path /ai-advent-challenge/week-1/day-02-demo.mp4"
+        },
+        {
+          "id": "no-code-on-screen",
+          "text": "Demo shows behaviour only — no cat/sed/head/grep over main.go or README in the shot list"
+        },
+        {
+          "id": "uses-demolib",
+          "text": "Demo script sources demolib.sh and describes shots with demo_note/demo_run instead of re-implementing the typing effect"
+        },
+        {
+          "id": "key-never-shown",
+          "text": "No command would print the API key (no echo $GROQ_API_KEY, no cat .env); a masked line is used if the key is mentioned"
+        },
+        {
+          "id": "task-specific-shots",
+          "text": "Shots make day 2's point visible: the same prompt unconstrained and constrained (format/max-tokens/stop)"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "demo-script-day3",
+      "prompt": "Запиши демо для дня 3",
+      "expected_output": "A shot plan for day 3 presented for approval plus a demo script that shows the four reasoning strategies from one run, without a code walkthrough.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "plan-before-recording",
+          "text": "Stops for approval before recording — no .mp4 produced, no record.sh/screencapture/osascript run"
+        },
+        {
+          "id": "plan-template",
+          "text": "Plan follows the skill template: 'План видео', a numbered 'Кадры' list, a duration estimate and the target file"
+        },
+        {
+          "id": "yandex-path-convention",
+          "text": "Plan names the remote path /ai-advent-challenge/week-1/day-03-demo.mp4"
+        },
+        {
+          "id": "no-code-on-screen",
+          "text": "Demo shows behaviour only — no cat/sed/head/grep over main.go, README or REPORT.md in the shot list"
+        },
+        {
+          "id": "uses-demolib",
+          "text": "Demo script sources demolib.sh and describes shots with demo_note/demo_run"
+        },
+        {
+          "id": "key-never-shown",
+          "text": "No command would print the API key; a masked line is used if the key is mentioned"
+        },
+        {
+          "id": "respects-day3-cli",
+          "text": "Handles that day 3 takes no flags and fires all strategies in one run, instead of inventing arguments"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "upload-path-day1",
+      "prompt": "Залей видео дня 1 на Яндекс.Диск",
+      "expected_output": "The exact upload command using the repo's script, the remote path /ai-advent-challenge/week-1/day-01-demo.mp4, and a note that YANDEX_DISK_TOKEN is missing.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "yandex-path-convention",
+          "text": "Names the remote path /ai-advent-challenge/week-1/day-01-demo.mp4"
+        },
+        {
+          "id": "uses-repo-uploader",
+          "text": "Uses the repo's upload_yadisk.sh rather than hand-rolling curl calls"
+        },
+        {
+          "id": "flags-missing-token",
+          "text": "Says YANDEX_DISK_TOKEN is not set and where to get one"
+        },
+        {
+          "id": "no-upload-attempted",
+          "text": "Makes no network call and uploads nothing"
+        }
+      ]
+    }
+  ]
+}
