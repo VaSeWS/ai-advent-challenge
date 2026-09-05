@@ -1,7 +1,11 @@
 # Day 3 — отчёт: 4 способа рассуждения на одной задаче
 
-Модель: `openai/gpt-oss-20b` (Groq), `max_tokens=900`. Задача одна и та же
-для всех способов, каждый способ обязан вернуть код решения на Python.
+Модель: `openai/gpt-oss-20b` (Groq), `max_tokens=1024`. Задача одна и та
+же для всех способов, каждый способ обязан вернуть код решения на Python.
+
+Доп. инструкции (требование кода, длина, "решай пошагово", инструкция для
+мета-промпта) идут через `system`-роль, а не подмешаны в текст задачи.
+`task` (user-сообщение) — чистое условие, без прочих указаний.
 
 ## Задача
 
@@ -11,25 +15,13 @@
 You are given an integer array nums of length n and an integer k.
 
 For each index i, define its instability score as max(nums[0..i]) - min(nums[i..n - 1]).
-
-In other words:
-max(nums[0..i]) is the largest value among the elements from index 0 to index i.
-min(nums[i..n - 1]) is the smallest value among the elements from index i to index n - 1.
 An index i is called stable if its instability score is less than or equal to k.
 
 Return the smallest stable index. If no such index exists, return -1.
 
-Example 1:
-Input: nums = [5,0,1,4], k = 3
-Output: 3
-
-Example 2:
-Input: nums = [3,2,1], k = 1
-Output: -1
-
-Example 3:
-Input: nums = [0], k = 0
-Output: 0
+Example 1: nums = [5,0,1,4], k = 3 → 3
+Example 2: nums = [3,2,1], k = 1 → -1
+Example 3: nums = [0], k = 0 → 0
 
 Constraints:
 1 <= nums.length <= 10^5
@@ -37,11 +29,15 @@ Constraints:
 0 <= k <= 10^9
 ```
 
-Требование к каждому способу, вшитое в промпт: код решения на Python,
-функция `def stable_index(nums: list[int], k: int) -> int`, за O(n)
-(без пересчёта max/min с нуля на каждом индексе), плюс инструкция быть
-кратким (без формальных доказательств — иначе модель съедала весь
-токен-бюджет на один вызов).
+**baseSystemPrompt** (общий для способов 1, 2, 4):
+```
+Реши задачу и верни код решения на Python: функция
+def stable_index(nums: list[int], k: int) -> int:
+Требование: код должен работать за O(n) по времени (n до 10^5), без пересчёта
+max/min с нуля на каждом индексе. Будь краток: обоснование не длиннее
+нескольких предложений, без формальных доказательств теорем. Код функции
+обязателен и должен быть полным.
+```
 
 Корректный алгоритм: `prefix_max[i]` (проход слева направо) и
 `suffix_min[i]` (проход справа налево), затем линейный поиск первого `i`,
@@ -49,39 +45,36 @@ Constraints:
 
 ---
 
-## 1) Прямой ответ (без инструкций)
+## 1) Прямой ответ
 
-**Промпт (user):** задача + требование кода + "будь краток" (текст выше).
+**System:** `baseSystemPrompt` (как есть).
+**User:** задача.
 
 **Ответ:**
 ```
-Обоснование: строим pref_max (проход слева-направо) и suf_min (проход
-справа-налево), затем ищем первый i, где pref_max[i] - suf_min[i] <= k.
-Время O(n), память O(n).
+Compute pref_max[i] and suf_min[i] once, then scan for the first i where
+pref_max[i] - suf_min[i] <= k. O(n) time, O(n) memory.
 ```
 ```python
-from typing import List
-
-def stable_index(nums: List[int], k: int) -> int:
+def stable_index(nums: list[int], k: int) -> int:
     n = len(nums)
     if n == 0:
         return -1
 
     pref_max = [0] * n
-    current_max = nums[0]
-    pref_max[0] = current_max
-    for i in range(1, n):
-        if nums[i] > current_max:
-            current_max = nums[i]
-        pref_max[i] = current_max
-
     suf_min = [0] * n
-    current_min = nums[-1]
-    suf_min[-1] = current_min
-    for i in range(n - 2, -1, -1):
-        if nums[i] < current_min:
-            current_min = nums[i]
-        suf_min[i] = current_min
+
+    cur = nums[0]
+    for i in range(n):
+        if nums[i] > cur:
+            cur = nums[i]
+        pref_max[i] = cur
+
+    cur = nums[-1]
+    for i in range(n - 1, -1, -1):
+        if nums[i] < cur:
+            cur = nums[i]
+        suf_min[i] = cur
 
     for i in range(n):
         if pref_max[i] - suf_min[i] <= k:
@@ -93,77 +86,129 @@ def stable_index(nums: List[int], k: int) -> int:
 
 ## 2) Пошаговое рассуждение
 
-**Промпт (user):** задача + `"\n\nРешай пошагово: распиши ход рассуждений перед финальным кодом."`
+**System:** `baseSystemPrompt + "\n\nРешай пошагово: распиши ход рассуждений перед финальным кодом."`
+**User:** задача.
 
 **Ответ:**
 ```
-Пошаговый план:
-1. Вычислить pref_max[i] = max(nums[0..i]).
-2. Вычислить suf_min[i] = min(nums[i..n-1]) (проход справа налево).
-3. Пройти по массиву от 0 до n-1, вернуть первый i с
-   pref_max[i] - suf_min[i] <= k, иначе -1.
-Все операции O(n) по времени и памяти.
+1. max_left[i] = max(nums[0..i]) (прямой проход)
+2. min_right[i] = min(nums[i..n-1]) (обратный проход)
+3. Первый i, где max_left[i] - min_right[i] <= k, — ответ; иначе -1.
+Всё O(n) по времени и памяти.
 ```
 ```python
-from typing import List
-
-def stable_index(nums: List[int], k: int) -> int:
+def stable_index(nums: list[int], k: int) -> int:
     n = len(nums)
-    pref_max = [0] * n
-    current = nums[0]
-    pref_max[0] = current
-    for i in range(1, n):
-        if nums[i] > current:
-            current = nums[i]
-        pref_max[i] = current
+    if n == 0:
+        return -1
 
-    suf_min = [0] * n
-    current = nums[-1]
-    suf_min[-1] = current
+    max_left = [0] * n
+    max_left[0] = nums[0]
+    for i in range(1, n):
+        max_left[i] = max(nums[i], max_left[i - 1])
+
+    min_right = [0] * n
+    min_right[-1] = nums[-1]
     for i in range(n - 2, -1, -1):
-        if nums[i] < current:
-            current = nums[i]
-        suf_min[i] = current
+        min_right[i] = min(nums[i], min_right[i + 1])
 
     for i in range(n):
-        if pref_max[i] - suf_min[i] <= k:
+        if max_left[i] - min_right[i] <= k:
             return i
     return -1
 ```
 
-Отличие от прямого ответа минимально — план из 3 пунктов перед тем же
-кодом. На этой задаче пошаговость не добавила ничего практического: сама
-задача достаточно короткая, чтобы модель решала её "с одного взгляда".
+Как и в прошлом прогоне (LIS) — план из нескольких пунктов, тот же код по
+сути, что и в прямом ответе. Разница почти незаметна.
 
 ---
 
 ## 3) Мета-промпт
 
-### 3a) Промпт для генерации промпта (user)
+**System (для генерации промпта):** `"Составь самодостаточный промпт (включая формулировку задачи), который поможет другой LLM максимально точно решить следующую задачу. В ответе выведи только текст промпта, без пояснений."`
+**User:** задача.
 
-Инструкция: составить самодостаточный промпт (с условием задачи), который
-поможет другой LLM максимально точно решить задачу; вернуть только текст
-промпта.
-
-### Сгенерированный промпт (ответ модели)
+### 3a) Сгенерированный промпт
 
 ```
-Write a Python function
+Task
+You are given an integer array nums of length n (1 ≤ n ≤ 10⁵) and an
+integer k (0 ≤ k ≤ 10⁹). For each index i define its instability score as
+instability(i) = max(nums[0..i]) – min(nums[i..n-1]).
+An index i is stable if instability(i) ≤ k.
+Return the smallest stable index. If no such index exists, return -1.
 
-def stable_index(nums: list[int], k: int) -> int:
-    ...
+Examples: [те же 3 примера]
 
-that returns the smallest index i such that
-max(nums[0..i]) - min(nums[i..n-1]) <= k.
-If no such index exists return -1.
-Constraints: 1 <= len(nums) <= 10^5, 0 <= nums[i] <= 10^9, 0 <= k <= 10^9.
-The solution must run in O(n) time and O(n) auxiliary space.
-Do not recompute the maximum or minimum from scratch for each index; use
-pre-computed prefix maxima and suffix minima.
-Provide only the complete function code, no additional explanation or output.
+Requirements
+1. Implement a function smallestStableIndex(nums: List[int], k: int) -> int
+   in Python 3.
+2. The algorithm must run in O(n) time and O(1) extra space (aside from
+   the input array).
+3. Provide a clear, commented implementation and a brief explanation of
+   the algorithm, including its time and space complexity.
+
+Deliverable
+A single Python file containing the function and an optional test
+harness that demonstrates correctness on the examples above.
 ```
 
 ### 3b) Решение по сгенерированному промпту
+
+**User:** только текст промпта выше (без нашего `baseSystemPrompt`).
+
+**Ответ: пустой.** Модель не вернула ничего — ни обоснования, ни кода.
+
+**Разбор причины.** Сгенерированный промпт сам придумал требование,
+которого не было в исходной задаче: *"O(n) time and O(1) extra space"*.
+Правильный алгоритм для этой задачи требует `O(n)` дополнительной памяти
+(массивы `prefix_max`/`suffix_min`) — сжать до `O(1)` для произвольного
+`k` в общем случае нельзя, не теряя возможность отвечать по префиксу и
+суффиксу одновременно. Модель, видимо, не смогла согласовать это
+самопротиворечие в рамках лимита `max_tokens=1024` и не выдала ответ.
+Это не разовая случайность метода — воспроизводимо: при повторном
+прогоне (после увеличения бюджета с 900 до 1024 токенов) 3b либо
+обрывался на середине формального доказательства без кода, либо, как
+здесь, не отвечал вовсе.
+
+---
+
+## 4) Панель экспертов
+
+**System:** `baseSystemPrompt + "\n\n" + <персона>`.
+**User:** задача (без изменений).
+
+### Аналитик
+
+**Персона:** `Ты аналитик. Разбери задачу с точки зрения корректности и граничных случаев, дай решение и обоснование.`
+
+**Ответ:**
+```python
+def stable_index(nums: list[int], k: int) -> int:
+    n = len(nums)
+    pref_max = [0] * n
+    cur_max = nums[0]
+    for i in range(n):
+        cur_max = max(cur_max, nums[i])
+        pref_max[i] = cur_max
+
+    suff_min = [0] * n
+    cur_min = nums[-1]
+    for i in range(n - 1, -1, -1):
+        cur_min = min(cur_min, nums[i])
+        suff_min[i] = cur_min
+
+    for i in range(n):
+        if pref_max[i] - suff_min[i] <= k:
+            return i
+    return -1
+```
+Разобрал граничные случаи: `n == 1` и большие значения (Python-инты не
+переполняются).
+
+### Инженер
+
+**Персона:** `Ты инженер-программист. Дай практичное решение с оценкой временной и пространственной сложности.`
 
 **Ответ:**
 ```python
@@ -173,148 +218,77 @@ def stable_index(nums: list[int], k: int) -> int:
         return -1
 
     prefix_max = [0] * n
-    prefix_max[0] = nums[0]
-    for i in range(1, n):
-        prefix_max[i] = prefix_max[i - 1] if prefix_max[i - 1] > nums[i] else nums[i]
+    cur_max = nums[0]
+    for i in range(n):
+        if nums[i] > cur_max:
+            cur_max = nums[i]
+        prefix_max[i] = cur_max
 
     suffix_min = [0] * n
-    suffix_min[-1] = nums[-1]
-    for i in range(n - 2, -1, -1):
-        suffix_min[i] = suffix_min[i + 1] if suffix_min[i + 1] < nums[i] else nums[i]
+    cur_min = nums[-1]
+    for i in range(n - 1, -1, -1):
+        if nums[i] < cur_min:
+            cur_min = nums[i]
+        suffix_min[i] = cur_min
 
     for i in range(n):
         if prefix_max[i] - suffix_min[i] <= k:
             return i
     return -1
 ```
+Complexity: Time `O(n)` (forward + backward pass + scan), Space `O(n)`
+(два вспомогательных массива).
 
-Сгенерированный промпт получился строже исходного (сам добавил "output
-only the function code, no explanation") — и модель послушалась: единственный
-из 7 ответов вообще без обоснования, только код.
+### Критик
 
----
+**Персона:** `Ты критик. Укажи на распространённые ошибки в решении этой задачи и дай собственный ответ с обоснованием, почему он верный.`
 
-## 4) Панель экспертов
+**Ответ:** таблица типичных ошибок —
 
-Каждая роль — отдельный запрос: `system` = описание роли, `user` = задача
-(без изменений).
+| Ошибка | Почему ломается |
+|---|---|
+| Пересчёт max/min внутри цикла | O(n²), TLE при n = 10⁵ |
+| Один проход слева для max и min | suffix min зависит от будущих элементов — прямым проходом не получить |
+| Off-by-one в суффиксном минимуме | `suffix_min[i] = min(suffix_min[i+1], nums[i])` без правильной границы даёт `suffix_min[n] = INF`, все индексы "проваливаются" |
+| Не обработан `n == 1` отдельно | работает и так, но легко словить баг в границах цикла |
+| `max()`/`min()` внутри цикла на каждой итерации | тот же O(n²) эффект + оверхед вызовов функций |
 
-### Аналитик
-
-**System:** `Ты аналитик. Разбери задачу с точки зрения корректности и граничных случаев, дай решение и обоснование.`
-
-**Ответ:**
-```
-Алгоритм: pref_max (max в [0..i]), suff_min (min в [i..n-1]), первый i с
-pref_max[i] - suff_min[i] <= k, иначе -1. O(n) времени и памяти.
-```
-```python
-from typing import List
-
-def stable_index(nums: List[int], k: int) -> int:
-    n = len(nums)
-    pref_max = [0] * n
-    pref_max[0] = nums[0]
-    for i in range(1, n):
-        pref_max[i] = max(pref_max[i-1], nums[i])
-
-    suff_min = [0] * n
-    suff_min[-1] = nums[-1]
-    for i in range(n-2, -1, -1):
-        suff_min[i] = min(suff_min[i+1], nums[i])
-
-    for i in range(n):
-        if pref_max[i] - suff_min[i] <= k:
-            return i
-    return -1
-```
-Граничные случаи, отмеченные моделью: `n == 1` (работает как обычный
-проход), `k == 0` (допускает только индексы с равными max/min).
-
-### Инженер
-
-**System:** `Ты инженер-программист. Дай практичное решение с оценкой временной и пространственной сложности.`
-
-**Ответ:**
 ```python
 def stable_index(nums: list[int], k: int) -> int:
     n = len(nums)
-    if n == 0:
-        return -1
-
-    pref_max = [0] * n
+    prefix_max = [0] * n
     cur_max = nums[0]
     for i in range(n):
         if nums[i] > cur_max:
             cur_max = nums[i]
-        pref_max[i] = cur_max
+        prefix_max[i] = cur_max
 
-    suff_min = [0] * n
+    suffix_min = [0] * n
     cur_min = nums[-1]
     for i in range(n - 1, -1, -1):
         if nums[i] < cur_min:
             cur_min = nums[i]
-        suff_min[i] = cur_min
+        suffix_min[i] = cur_min
 
     for i in range(n):
-        if pref_max[i] - suff_min[i] <= k:
+        if prefix_max[i] - suffix_min[i] <= k:
             return i
     return -1
 ```
-Complexities: Time `O(n)` (один проход на каждый массив + линейный
-поиск), Space `O(n)` (два вспомогательных массива).
-
-### Критик
-
-**System:** `Ты критик. Укажи на распространённые ошибки в решении этой задачи и дай собственный ответ с обоснованием, почему он верный.`
-
-**Ответ:**
-```
-Критика типичных ошибок:
-1. Пересчёт max/min в каждой итерации -> O(n^2).
-2. Неправильный срез (min(nums[i+1:]) исключает элемент i).
-3. Забывают, что справа нужен минимум, а не максимум.
-4. Не проверяют suff_min[n-1] отдельно (последний элемент).
-5. Возвращают первый подходящий индекс, но не убеждаются, что он
-   действительно самый маленький (например, при обходе не слева направо).
-```
-```python
-def stable_index(nums: list[int], k: int) -> int:
-    n = len(nums)
-    if n == 0:
-        return -1
-
-    pref_max = [0] * n
-    pref_max[0] = nums[0]
-    for i in range(1, n):
-        pref_max[i] = pref_max[i-1] if pref_max[i-1] > nums[i] else nums[i]
-
-    suff_min = [0] * n
-    suff_min[-1] = nums[-1]
-    for i in range(n-2, -1, -1):
-        suff_min[i] = suff_min[i+1] if suff_min[i+1] < nums[i] else nums[i]
-
-    for i in range(n):
-        if pref_max[i] - suff_min[i] <= k:
-            return i
-    return -1
-```
-Единственный из трёх экспертов, кто явно перечислил конкретные баги
-(включая реалистичную ошибку со срезом `nums[i+1:]`), а не просто описал
-правильный алгоритм.
+Как и в прошлом прогоне (LIS) — единственный эксперт, перечисливший
+конкретные баги реализации, а не только правильный алгоритм.
 
 ---
 
 ## Проверка корректности
 
-Каждый из 7 кодов извлечён и прогнан через `python3`: 3 примера из условия
-+ 500 случайных тестов (`n` до 30, значения 0-15) против brute-force
-(`max(nums[:i+1]) - min(nums[i:]) <= k`).
+5 из 6 кодов (все, кроме пустого 3b) извлечены и прогнаны через
+`python3`: 3 примера из условия + 500 случайных тестов против
+brute-force.
 
 ```
 1_direct:        PASS (examples + 500 random cases)
 2_step_by_step:  PASS (examples + 500 random cases)
-3b_meta_prompt:  PASS (examples + 500 random cases)
 4_analyst:       PASS (examples + 500 random cases)
 4_engineer:      PASS (examples + 500 random cases)
 4_critic:        PASS (examples + 500 random cases)
@@ -322,43 +296,36 @@ def stable_index(nums: list[int], k: int) -> int:
 ALL PASS
 ```
 
-Все 6 вариантов кода (прямой, пошаговый и мета-промпт совпадают, плюс 3
-эксперта) реализуют один и тот же корректный алгоритм и проходят все
-тесты — ошибок в коде не нашлось ни у одного способа.
-
 ## Сравнение
 
-Задача оказалась достаточно простой для `gpt-oss-20b`, чтобы все способы
-дали рабочий код с первого раза — корректность не разделяет способы.
-Разница — в форме и глубине сопровождающего текста:
-
-| Способ | Код верен | Обоснование |
+| Способ | Код | Обоснование |
 |---|---|---|
-| 1. Прямой | да | 2-3 предложения |
-| 2. Пошаговый | да | план из 3 пунктов, почти идентичен прямому |
-| 3. Мета-промпт | да | без обоснования вообще — сгенерированный промпт сам запретил объяснения |
-| 4. Аналитик | да | явно разобрал граничные случаи (n=1, k=0) |
-| 4. Инженер | да | явная оценка сложности времени/памяти |
-| 4. Критик | да | единственный перечислил конкретные типичные баги (в т.ч. с некорректным срезом) |
+| 1. Прямой | верен | 1-2 предложения |
+| 2. Пошаговый | верен | план из 3-4 пунктов, почти идентичен прямому |
+| 3. Мета-промпт | **отсутствует** | сгенерированный промпт добавил невыполнимое требование (O(1) памяти) и модель не ответила вовсе |
+| 4. Аналитик | верен | граничные случаи |
+| 4. Инженер | верен | оценка сложности |
+| 4. Критик | верен | единственный — таблица конкретных типичных багов |
 
-**Наиболее ценный способ для code review — панель экспертов, роль
-критика**: единственный ответ, где модель явно указала на реалистичные
-ошибки реализации (неправильный срез, забытая граница массива), а не
-просто пересказала правильный алгоритм. Пошаговое рассуждение на этой
-задаче почти не отличалось от прямого ответа — задача слишком
-компактная, чтобы разница в промпте проявилась в решении.
+**Итог: перенос доп. инструкций в system prompt не изменил качество кода**
+там, где system prompt реально использовался (способы 1, 2, 4) — все 5
+решений идентичны по алгоритму и проходят тесты. Разница по-прежнему в
+сопроводительном тексте, и критик снова единственный дал содержательный
+разбор ошибок, а не пересказ алгоритма.
 
-Мета-промпт показал обратный эффект по сравнению с задачей дня 3 на LIS:
-там сгенерированный промпт просил только число, здесь — только код без
-объяснений. В обоих случаях модель, генерируя промпт для самой себя,
-делает его строже и суше, чем то, что просил бы человек.
+**Мета-промпт — единственный способ, который на этой задаче сломался
+полностью.** Когда модель формулирует промпт для самой себя без нашего
+`baseSystemPrompt` (по замыслу задания — способ 3 должен работать только
+на сгенерированном промпте), она добавляет условия от себя — в первом
+прогоне это была просьба не объяснять вообще, во втором — трудновыполнимое
+требование O(1) памяти. В обоих случаях результат хуже, чем у остальных
+3 способов: это единственный метод, продемонстрировавший нестабильность
+результата между запусками на одной и той же задаче.
 
 ## Инфраструктурная проблема (не про задачу)
 
-Прогон всех 7 запросов подряд упирался в лимит Groq free tier — 8000
-токенов/минуту. Без ограничения длины ответа модель на некоторых
-вызовах уходила в формальные доказательства теорем (5000-6000 токенов
-за один ответ) и рейт-лимит срабатывал уже на 2-3 запросе. Исправлено
-добавлением `max_tokens=900` и инструкции "будь краток, без формальных
-доказательств" в промпт — после этого весь прогон из 7 запросов
-укладывается в бюджет.
+Прогон всех 7 запросов подряд периодически упирался в лимит Groq free
+tier — 8000 токенов/минуту, обычно на последнем (7-м) вызове, если сумма
+предыдущих ответов вышла длиннее обычного. Решалось точечным повторным
+запросом только упавшего вызова после паузы, без перезапуска всего
+скрипта.
