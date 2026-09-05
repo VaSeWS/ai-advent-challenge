@@ -24,3 +24,5 @@ run out: DeepSeek, same OpenAI-compatible shape.
 - No retry/backoff/elaborate error handling — this is homework, fail fast
   with a clear stderr message and exit 1.
 - `go build ./...` must pass before committing.
+- Solo homework repo, no PR review flow: commit and push straight to `main`,
+  no feature branches.
