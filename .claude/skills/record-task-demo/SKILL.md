@@ -93,14 +93,16 @@ not something to work around.
 ### 6. Upload to Yandex.Disk
 
 ```
-export YANDEX_DISK_TOKEN=...
 .claude/skills/record-task-demo/scripts/upload_yadisk.sh week-NN/day-NN/video/day-NN-demo.mp4
 ```
 
-The remote path is derived automatically as
-`/ai-advent-challenge/week-N/day-NN-demo.mp4`, missing folders are created,
-and the script prints a public link. Without a token, tell the user to drag
-the file into disk.yandex.ru — do not stall the rest of the work on it.
+`YANDEX_DISK_TOKEN` is read from the environment, falling back to `<repo>/.env`
+(same gitignored file as `GROQ_API_KEY` — add a `YANDEX_DISK_TOKEN=...` line
+there once, get the token from https://yandex.ru/dev/disk/poligon/). The
+remote path is derived automatically as `/ai-advent-challenge/week-N/day-NN-demo.mp4`,
+missing folders are created, and the script prints a public link. Without a
+token anywhere, tell the user to drag the file into disk.yandex.ru — do not
+stall the rest of the work on it.
 
 Report the local path and the public link when you are done.
 

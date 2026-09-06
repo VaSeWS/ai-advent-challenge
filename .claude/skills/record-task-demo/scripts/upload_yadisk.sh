@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Uploads a recording to Yandex.Disk and prints a public link.
 #
-#   export YANDEX_DISK_TOKEN=...
 #   .claude/skills/record-task-demo/scripts/upload_yadisk.sh week-01/day-02/video/day-02-demo.mp4
 #
 # With no remote path given, the file lands at
@@ -9,14 +8,32 @@
 # path. Missing folders are created. NO_PUBLISH=1 uploads without publishing.
 #
 # Token: https://yandex.ru/dev/disk/poligon/ (OAuth token for the Disk API).
+# Reads YANDEX_DISK_TOKEN from the environment, falling back to <repo>/.env
+# (same file and gitignore as GROQ_API_KEY) — add a YANDEX_DISK_TOKEN=...
+# line there once and every later run picks it up automatically.
 
 set -euo pipefail
 
-API=https://cloud-api.yandex.net/v1/disk/resources
-: "${YANDEX_DISK_TOKEN:?export YANDEX_DISK_TOKEN first (https://yandex.ru/dev/disk/poligon/)}"
-
 FILE=${1:?usage: upload_yadisk.sh <file> [remote-path]}
 [ -f "$FILE" ] || { echo "error: no such file: $FILE" >&2; exit 1; }
+
+REPO_ROOT=$(cd "$(dirname "$FILE")" && git rev-parse --show-toplevel)
+
+# .env is gitignored, so a worktree does not have one — fall back to the
+# main checkout that owns this worktree.
+ENV_FILE=${ENV_FILE:-"$REPO_ROOT/.env"}
+if [ ! -f "$ENV_FILE" ]; then
+    common=$(cd "$REPO_ROOT" && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+    [ -n "$common" ] && ENV_FILE="$(dirname "$common")/.env"
+fi
+
+if [ -z "${YANDEX_DISK_TOKEN:-}" ] && [ -f "$ENV_FILE" ]; then
+    YANDEX_DISK_TOKEN=$(grep -m1 '^YANDEX_DISK_TOKEN=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')
+    export YANDEX_DISK_TOKEN
+fi
+
+API=https://cloud-api.yandex.net/v1/disk/resources
+: "${YANDEX_DISK_TOKEN:?export YANDEX_DISK_TOKEN or add it to <repo>/.env (https://yandex.ru/dev/disk/poligon/)}"
 
 auth=(-H "Authorization: OAuth $YANDEX_DISK_TOKEN")
 
