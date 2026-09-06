@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -8,42 +9,25 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"unicode"
+	"unicode/utf8"
 )
 
 const (
 	groqEndpoint = "https://api.groq.com/openai/v1/chat/completions"
 	groqModel    = "openai/gpt-oss-20b"
 
-	// One fixed request for every temperature. It deliberately has two halves:
-	// a factual half (the TCP handshake is exactly SYN / SYN-ACK / ACK — either
-	// the answer names all three steps or it is wrong) and an open half (a
-	// metaphor, where there is no single right answer). So a single prompt
-	// exposes both accuracy and creativity as the temperature changes.
-	systemPrompt = `Отвечай по-русски. Формат ответа строго такой:
-1) Объяснение: один абзац, не длиннее 4 предложений.
-2) Метафора: одно предложение, начинается со слова "Метафора:".
-Ничего кроме этих двух пунктов не выводи.`
-
-	userPrompt = `Объясни, что такое TCP handshake и из каких шагов он состоит,
-и придумай для него метафору.`
-
-	// Each temperature is sampled several times: one answer per temperature
-	// shows wording, but only repeated runs show diversity.
-	runsPerTemperature = 3
+	systemPrompt = "Отвечай по-русски, кратко и по делу."
 
 	// gpt-oss spends part of the completion budget on reasoning tokens, so a
-	// tight max_tokens truncates the visible answer mid-sentence and the
-	// diversity numbers end up measuring truncation instead of sampling.
-	// reasoning_effort=low keeps that hidden part short. The cap is also
-	// bounded from above: Groq's free tier charges max_tokens against the
-	// 8000 tokens/minute limit as *requested*, not as actually used, so all
-	// 9 calls (~(600 + prompt) each) have to fit into that budget.
+	// tight max_tokens truncates the visible answer mid-sentence.
+	// reasoning_effort=low keeps that hidden part short.
 	maxTokensPerCall = 600
 	reasoningEffort  = "low"
+
+	columnWidth = 38
 )
 
-// temperatures under comparison.
+// temperatures compared side by side, one column each.
 var temperatures = []float64{0, 0.7, 1.2}
 
 type chatMessage struct {
@@ -74,38 +58,45 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("=== Запрос (одинаковый для всех температур) ===")
-	fmt.Println("System:")
-	fmt.Println(systemPrompt)
-	fmt.Println("User:")
-	fmt.Println(userPrompt)
-	fmt.Println()
-
-	for _, temp := range temperatures {
-		answers := make([]string, 0, runsPerTemperature)
-		for run := 1; run <= runsPerTemperature; run++ {
-			answer, err := ask(apiKey, temp)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "error:", err)
-				os.Exit(1)
-			}
-			answers = append(answers, answer)
-			fmt.Printf("=== temperature=%.1f, прогон %d/%d ===\n", temp, run, runsPerTemperature)
-			fmt.Println(answer)
-			fmt.Println()
-		}
-		fmt.Printf("--- temperature=%.1f: разнообразие между прогонами ---\n", temp)
-		fmt.Printf("средняя попарная схожесть (Jaccard по словам): %.2f\n", meanPairwiseSimilarity(answers))
-		fmt.Printf("дословно совпавших пар прогонов: %d из %d\n\n", identicalPairs(answers), pairCount(len(answers)))
+	question := readQuestion()
+	if question == "" {
+		fmt.Fprintln(os.Stderr, "error: question is empty")
+		os.Exit(1)
 	}
+
+	answers := make([]string, len(temperatures))
+	for i, temp := range temperatures {
+		answer, err := ask(apiKey, question, temp)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		answers[i] = answer
+	}
+
+	printTable(temperatures, answers)
 }
 
-func ask(apiKey string, temperature float64) (string, error) {
+// readQuestion takes the question from CLI args if given, otherwise prompts
+// on stdin.
+func readQuestion() string {
+	if len(os.Args) > 1 {
+		return strings.Join(os.Args[1:], " ")
+	}
+	fmt.Print("Вопрос: ")
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		return ""
+	}
+	return strings.TrimSpace(scanner.Text())
+}
+
+func ask(apiKey, question string, temperature float64) (string, error) {
 	reqBody, err := json.Marshal(chatRequest{
 		Model: groqModel,
 		Messages: []chatMessage{
 			{Role: "system", Content: systemPrompt},
-			{Role: "user", Content: userPrompt},
+			{Role: "user", Content: question},
 		},
 		Temperature:     temperature,
 		MaxTokens:       maxTokensPerCall,
@@ -146,71 +137,78 @@ func ask(apiKey string, temperature float64) (string, error) {
 		return "", fmt.Errorf("response contained no choices")
 	}
 
-	return parsed.Choices[0].Message.Content, nil
+	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
 }
 
-// meanPairwiseSimilarity is a rough numeric stand-in for "разнообразие": 1.00
-// means every pair of runs used exactly the same set of words, lower values
-// mean the wording drifted apart.
-func meanPairwiseSimilarity(answers []string) float64 {
-	sets := make([]map[string]bool, len(answers))
-	for i, a := range answers {
-		sets[i] = wordSet(a)
+// printTable renders one column per temperature, each answer word-wrapped to
+// columnWidth, side by side in a single ASCII table.
+func printTable(temps []float64, answers []string) {
+	headers := make([]string, len(temps))
+	for i, t := range temps {
+		headers[i] = fmt.Sprintf("temperature=%.1f", t)
 	}
 
-	sum, pairs := 0.0, 0
-	for i := range sets {
-		for j := i + 1; j < len(sets); j++ {
-			sum += jaccard(sets[i], sets[j])
-			pairs++
+	wrapped := make([][]string, len(answers))
+	maxLines := 0
+	for i, a := range answers {
+		wrapped[i] = wrapText(a, columnWidth)
+		if len(wrapped[i]) > maxLines {
+			maxLines = len(wrapped[i])
 		}
 	}
-	if pairs == 0 {
-		return 1
-	}
-	return sum / float64(pairs)
-}
 
-func identicalPairs(answers []string) int {
-	count := 0
-	for i := range answers {
-		for j := i + 1; j < len(answers); j++ {
-			if strings.TrimSpace(answers[i]) == strings.TrimSpace(answers[j]) {
-				count++
+	border := "+"
+	for range headers {
+		border += strings.Repeat("-", columnWidth+2) + "+"
+	}
+
+	printRow := func(cells []string) {
+		fmt.Print("|")
+		for _, c := range cells {
+			pad := columnWidth - utf8.RuneCountInString(c)
+			if pad < 0 {
+				pad = 0
+			}
+			fmt.Printf(" %s%s |", c, strings.Repeat(" ", pad))
+		}
+		fmt.Println()
+	}
+
+	fmt.Println(border)
+	printRow(headers)
+	fmt.Println(border)
+	for line := 0; line < maxLines; line++ {
+		row := make([]string, len(wrapped))
+		for i, lines := range wrapped {
+			if line < len(lines) {
+				row[i] = lines[line]
 			}
 		}
+		printRow(row)
 	}
-	return count
+	fmt.Println(border)
 }
 
-func pairCount(n int) int {
-	return n * (n - 1) / 2
-}
-
-func wordSet(s string) map[string]bool {
-	words := strings.FieldsFunc(strings.ToLower(s), func(r rune) bool {
-		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
-	})
-	set := make(map[string]bool, len(words))
-	for _, w := range words {
-		set[w] = true
-	}
-	return set
-}
-
-func jaccard(a, b map[string]bool) float64 {
-	if len(a) == 0 && len(b) == 0 {
-		return 1
-	}
-	intersection := 0
-	for w := range a {
-		if b[w] {
-			intersection++
+// wrapText breaks s into lines of at most width runes, preserving existing
+// newlines and breaking on word boundaries.
+func wrapText(s string, width int) []string {
+	var lines []string
+	for _, paragraph := range strings.Split(s, "\n") {
+		words := strings.Fields(paragraph)
+		if len(words) == 0 {
+			lines = append(lines, "")
+			continue
 		}
+		current := words[0]
+		for _, w := range words[1:] {
+			if utf8.RuneCountInString(current)+1+utf8.RuneCountInString(w) > width {
+				lines = append(lines, current)
+				current = w
+				continue
+			}
+			current += " " + w
+		}
+		lines = append(lines, current)
 	}
-	union := len(a) + len(b) - intersection
-	if union == 0 {
-		return 1
-	}
-	return float64(intersection) / float64(union)
+	return lines
 }
