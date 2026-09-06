@@ -16,6 +16,13 @@ Follow the steps in order. Step 2 is a hard gate — never record before the
 user approves the plan, because a take costs a minute of their screen and a
 wrong take costs another.
 
+Before starting, create a todo list (`TaskCreate`) with one item per step
+below, including step 7's exact report shape as its own item (`Report "Код:
+.../tree/main/... / Видео: ..."`) — not just "commit and push". The report
+format is the easiest step to get right in spirit and wrong in the letter
+(a commit link instead of a tree link, a missing line); a todo item that
+names the literal string is what catches that before it ships.
+
 ### 1. Read the task
 
 Read `week-NN/day-NN/README.md` (the `## Задание` section is the contract)
