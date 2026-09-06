@@ -1,6 +1,6 @@
 ---
 name: record-task-demo
-description: Record a silent screencast demo of a day's task in this repo (week-NN/day-NN) — plan the shots, get the plan approved, write a self-typing terminal demo, dry-run it, capture the screen with the macOS screencapture, and upload the .mp4 to Yandex.Disk. Use this skill whenever the user asks for a video, demo, screencast, recording, GIF or "покажи, как работает" for a task — including phrasings like "сделай видео для дня 3", "запиши демо", "надо показать задание" — even if they never say the word "skill" or name a tool.
+description: Record a silent screencast demo of a day's task in this repo (week-NN/day-NN) — plan the shots, get the plan approved, write a self-typing terminal demo, dry-run it, capture the screen with the macOS screencapture, upload the .mp4 to Yandex.Disk, commit and push the demo script, and report "Код: <github link> / Видео: <yandex link>". Use this skill whenever the user asks for a video, demo, screencast, recording, GIF or "покажи, как работает" for a task — including phrasings like "сделай видео для дня 3", "запиши демо", "надо показать задание" — even if they never say the word "skill" or name a tool.
 ---
 
 # Record a task demo
@@ -104,7 +104,30 @@ missing folders are created, and the script prints a public link. Without a
 token anywhere, tell the user to drag the file into disk.yandex.ru — do not
 stall the rest of the work on it.
 
-Report the local path and the public link when you are done.
+### 7. Commit, push, and report the two links
+
+The demo script (never the `.mp4`) is real content of the day — commit it
+and push straight to `main` per this repo's workflow (see the repo's
+`CLAUDE.md`: solo homework repo, no branches, no PR review):
+
+```
+git add week-NN/day-NN/video/demo.sh
+git commit -m "..."
+git push origin <branch>:main   # or `git push` if already on main
+```
+
+Then derive the GitHub link from the remote and report both links in
+exactly this shape — nothing else, no extra commentary:
+
+```
+Код: https://github.com/<owner>/<repo>/tree/main/week-NN/day-NN
+Видео: <public link from upload_yadisk.sh>
+```
+
+Get `<owner>/<repo>` from `git remote get-url origin` (strip `.git` and any
+`git@host:`/`https://host/` prefix). If the video was uploaded manually
+(no token, user dragged the file in) ask the user for the public link
+before printing this block — don't guess it.
 
 ## What belongs in the video
 
