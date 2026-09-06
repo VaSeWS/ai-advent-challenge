@@ -21,7 +21,11 @@ const (
 		`Сколько сестёр в этой семье? Дай краткое рассуждение (не больше 2-3 предложений), ` +
 		`затем на отдельной последней строке напиши строго: "Ответ: <число>".`
 
-	maxTokens = 2048
+	// qwen/qwen3.6-27b on this Groq account is capped at 1000 output
+	// tokens/minute (OTPM, on-demand tier) — max_tokens must stay under
+	// that or the call 429s; 900 leaves enough headroom to actually finish
+	// the visible <think> block and still write the final answer line.
+	maxTokens = 900
 
 	// column width for word-wrapping answers before the tabwriter table —
 	// without it, a single unbroken paragraph turns into one huge line and
