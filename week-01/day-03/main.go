@@ -3,85 +3,41 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const (
 	groqEndpoint = "https://api.groq.com/openai/v1/chat/completions"
 	groqModel    = "openai/gpt-oss-20b"
 
-	// Fixed task: LeetCode 3904 (Smallest Stable Index II). Correct algorithm is
-	// well-defined (prefix-max + suffix-min arrays, then a linear scan), so each
-	// method's code can be checked for correctness against known edge cases.
-	// task is the bare problem statement; every method-specific instruction
-	// (code requirement, brevity, step-by-step, meta-prompt) lives in a system
-	// prompt instead, kept separate from the task itself.
-	task = `LeetCode 3904, Smallest Stable Index II:
-
-You are given an integer array nums of length n and an integer k.
-
-For each index i, define its instability score as max(nums[0..i]) - min(nums[i..n - 1]).
-
-In other words:
-max(nums[0..i]) is the largest value among the elements from index 0 to index i.
-min(nums[i..n - 1]) is the smallest value among the elements from index i to index n - 1.
-An index i is called stable if its instability score is less than or equal to k.
-
-Return the smallest stable index. If no such index exists, return -1.
-
-Example 1:
-Input: nums = [5,0,1,4], k = 3
-Output: 3
-Explanation:
-At index 0: The maximum in [5] is 5, and the minimum in [5, 0, 1, 4] is 0, so the instability score is 5 - 0 = 5.
-At index 1: The maximum in [5, 0] is 5, and the minimum in [0, 1, 4] is 0, so the instability score is 5 - 0 = 5.
-At index 2: The maximum in [5, 0, 1] is 5, and the minimum in [1, 4] is 1, so the instability score is 5 - 1 = 4.
-At index 3: The maximum in [5, 0, 1, 4] is 5, and the minimum in [4] is 4, so the instability score is 5 - 4 = 1.
-This is the first index with an instability score less than or equal to k = 3. Thus, the answer is 3.
-
-Example 2:
-Input: nums = [3,2,1], k = 1
-Output: -1
-Explanation:
-At index 0, the instability score is 3 - 1 = 2.
-At index 1, the instability score is 3 - 1 = 2.
-At index 2, the instability score is 3 - 1 = 2.
-None of these values is less than or equal to k = 1, so the answer is -1.
-
-Example 3:
-Input: nums = [0], k = 0
-Output: 0
-Explanation:
-At index 0, the instability score is 0 - 0 = 0, which is less than or equal to k = 0. Therefore, the answer is 0.
-
-Constraints:
-1 <= nums.length <= 10^5
-0 <= nums[i] <= 10^9
-0 <= k <= 10^9`
-
-	// baseSystemPrompt carries the requirements common to every method: what
-	// language/signature to return and how verbose to be. Groq free tier caps
-	// this model at 8000 tokens/minute; without the brevity instruction
-	// responses ran to 5-6k tokens each (formal proofs) and blew the budget
-	// after 1-2 of the 7 calls this program makes.
-	baseSystemPrompt = `Реши задачу и верни код решения на Python: функция
-def stable_index(nums: list[int], k: int) -> int:
-Требование: код должен работать за O(n) по времени (n до 10^5), без пересчёта
-max/min с нуля на каждом индексе. Будь краток: обоснование не длиннее
-нескольких предложений, без формальных доказательств теорем. Код функции
-обязателен и должен быть полным.`
-
-	stepByStepAddendum = "\n\nРешай пошагово: распиши ход рассуждений перед финальным кодом."
+	stepByStepSystemPrompt = "Решай пошагово: распиши ход рассуждений перед финальным ответом."
 
 	metaPromptSystemPrompt = "Составь самодостаточный промпт (включая формулировку задачи), " +
 		"который поможет другой LLM максимально точно решить следующую задачу. " +
 		"В ответе выведи только текст промпта, без пояснений."
 
-	maxTokensPerCall = 1024
+	// gpt-oss-20b is a reasoning model: it spends most of max_tokens on a
+	// hidden "reasoning" field before writing the visible content. At the
+	// API default reasoning effort, a single call burned ~950 of 1024 tokens
+	// on hidden reasoning alone and returned empty content. reasoningEffort
+	// "low" cuts that down, but hidden reasoning length is still stochastic —
+	// a verbose method/persona can still hit maxTokensPerCall with empty
+	// content on an unlucky run; rerun or bump this constant if that happens.
+	reasoningEffort  = "low"
+	maxTokensPerCall = 2048
 )
+
+// experts are generic personas for the panel method, independent of any task.
+var experts = []struct{ role, persona string }{
+	{"Аналитик", "Ты аналитик. Разбери задачу с точки зрения корректности и граничных случаев, дай решение и обоснование."},
+	{"Инженер", "Ты инженер-программист. Дай практичное решение с оценкой временной и пространственной сложности."},
+	{"Критик", "Ты критик. Укажи на распространённые ошибки в решении этой задачи и дай собственный ответ с обоснованием, почему он верный."},
+}
 
 type chatMessage struct {
 	Role    string `json:"role"`
@@ -89,9 +45,10 @@ type chatMessage struct {
 }
 
 type chatRequest struct {
-	Model     string        `json:"model"`
-	Messages  []chatMessage `json:"messages"`
-	MaxTokens int           `json:"max_tokens,omitempty"`
+	Model           string        `json:"model"`
+	Messages        []chatMessage `json:"messages"`
+	MaxTokens       int           `json:"max_tokens,omitempty"`
+	ReasoningEffort string        `json:"reasoning_effort,omitempty"`
 }
 
 type chatResponse struct {
@@ -101,50 +58,76 @@ type chatResponse struct {
 }
 
 func main() {
+	method := flag.String("method", "", "reasoning method: direct, step, meta, or panel")
+	flag.Parse()
+
+	if flag.NArg() < 1 {
+		fmt.Fprintln(os.Stderr, "usage: day-03 -method=direct|step|meta|panel <task>")
+		os.Exit(1)
+	}
+	task := strings.Join(flag.Args(), " ")
+
 	apiKey := os.Getenv("GROQ_API_KEY")
 	if apiKey == "" {
 		fmt.Fprintln(os.Stderr, "error: GROQ_API_KEY environment variable is not set")
 		os.Exit(1)
 	}
 
-	direct, err := ask(apiKey, []chatMessage{
-		{Role: "system", Content: baseSystemPrompt},
+	switch *method {
+	case "direct":
+		runDirect(apiKey, task)
+	case "step":
+		runStepByStep(apiKey, task)
+	case "meta":
+		runMetaPrompt(apiKey, task)
+	case "panel":
+		runPanel(apiKey, task)
+	default:
+		fmt.Fprintln(os.Stderr, "error: -method must be one of direct, step, meta, panel")
+		os.Exit(1)
+	}
+}
+
+func runDirect(apiKey, task string) {
+	answer, err := ask(apiKey, []chatMessage{
 		{Role: "user", Content: task},
 	})
 	fatalIf(err)
-	printSection("1) Прямой ответ (без инструкций)", direct)
+	printSection("Прямой ответ (пустой system prompt)", answer)
+}
 
-	stepByStep, err := ask(apiKey, []chatMessage{
-		{Role: "system", Content: baseSystemPrompt + stepByStepAddendum},
+func runStepByStep(apiKey, task string) {
+	answer, err := ask(apiKey, []chatMessage{
+		{Role: "system", Content: stepByStepSystemPrompt},
 		{Role: "user", Content: task},
 	})
 	fatalIf(err)
-	printSection("2) Пошаговое рассуждение", stepByStep)
+	printSection("Пошаговое рассуждение", answer)
+}
 
+func runMetaPrompt(apiKey, task string) {
 	generatedPrompt, err := ask(apiKey, []chatMessage{
 		{Role: "system", Content: metaPromptSystemPrompt},
 		{Role: "user", Content: task},
 	})
 	fatalIf(err)
+	printSection("Сгенерированный промпт", generatedPrompt)
+
 	viaGeneratedPrompt, err := ask(apiKey, []chatMessage{
 		{Role: "user", Content: generatedPrompt},
 	})
 	fatalIf(err)
-	printSection("3a) Сгенерированный промпт", generatedPrompt)
-	printSection("3b) Решение по сгенерированному промпту", viaGeneratedPrompt)
+	printSection("Решение по сгенерированному промпту", viaGeneratedPrompt)
+}
 
-	experts := []struct{ role, persona string }{
-		{"Аналитик", "Ты аналитик. Разбери задачу с точки зрения корректности и граничных случаев, дай решение и обоснование."},
-		{"Инженер", "Ты инженер-программист. Дай практичное решение с оценкой временной и пространственной сложности."},
-		{"Критик", "Ты критик. Укажи на распространённые ошибки в решении этой задачи и дай собственный ответ с обоснованием, почему он верный."},
-	}
+func runPanel(apiKey, task string) {
 	for _, e := range experts {
 		answer, err := ask(apiKey, []chatMessage{
-			{Role: "system", Content: baseSystemPrompt + "\n\n" + e.persona},
+			{Role: "system", Content: e.persona},
 			{Role: "user", Content: task},
 		})
 		fatalIf(err)
-		printSection("4) Панель экспертов — "+e.role, answer)
+		printSection("Панель экспертов — "+e.role, answer)
 	}
 }
 
@@ -163,9 +146,10 @@ func printSection(title, body string) {
 
 func ask(apiKey string, messages []chatMessage) (string, error) {
 	reqBody, err := json.Marshal(chatRequest{
-		Model:     groqModel,
-		Messages:  messages,
-		MaxTokens: maxTokensPerCall,
+		Model:           groqModel,
+		Messages:        messages,
+		MaxTokens:       maxTokensPerCall,
+		ReasoningEffort: reasoningEffort,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to build request body: %w", err)
