@@ -71,6 +71,9 @@ href=$(curl -sS "${auth[@]}" -G \
 curl -sS --fail -T "$FILE" "$href"
 echo "uploaded: $REMOTE"
 
+rm -f "$FILE"
+echo "removed local copy: $FILE"
+
 if [ "${NO_PUBLISH:-0}" = "1" ]; then
     exit 0
 fi
