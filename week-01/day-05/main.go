@@ -85,7 +85,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "error: model %s: %v\n", m.id, err)
 			os.Exit(1)
 		}
-		answers[i] = wrapText(strings.TrimSpace(answer), colWidth)
+		answers[i] = wrapText(strings.TrimSpace(stripThink(answer)), colWidth)
 	}
 
 	printTable(task, answers)
@@ -119,6 +119,22 @@ func printTable(task string, answers [][]string) {
 		fmt.Fprintln(w, strings.Join(row, "\t"))
 	}
 	w.Flush()
+}
+
+// stripThink removes a model's visible <think>...</think> block from the
+// table (qwen/qwen3.6-27b prints its chain of thought as plain content,
+// unlike gpt-oss which keeps it in a separate hidden field). The model still
+// spends real tokens thinking — this only hides it from the printed table.
+func stripThink(s string) string {
+	start := strings.Index(s, "<think>")
+	if start == -1 {
+		return s
+	}
+	end := strings.Index(s, "</think>")
+	if end == -1 {
+		return s
+	}
+	return s[:start] + s[end+len("</think>"):]
 }
 
 // wrapText word-wraps s to width, treating existing newlines as hard breaks.
