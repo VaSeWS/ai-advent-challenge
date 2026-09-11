@@ -252,3 +252,39 @@ func inputTestEnterKey() tea.KeyPressMsg {
 func inputTestCtrlJKey() tea.KeyPressMsg {
 	return tea.KeyPressMsg(tea.Key{Code: 'j', Mod: tea.ModCtrl})
 }
+
+func TestAppTextareaHeightTracksEnteredLines(t *testing.T) {
+	model := newInputTestApp(t)
+	if got := model.input.Height(); got != 1 {
+		t.Fatalf("initial input height = %d, want 1", got)
+	}
+	if prompts := strings.Count(model.View().Content, "You>"); prompts != 1 {
+		t.Fatalf("initial view prompts = %d, want 1", prompts)
+	}
+
+	var cmd tea.Cmd
+	model, cmd = updateInputTestApp(t, model, inputTestTextKey("/"))
+	if cmd == nil {
+		t.Fatal("text input must keep the textarea interactive")
+	}
+	if got := model.input.Height(); got != 1 {
+		t.Fatalf("single-line input height = %d, want 1", got)
+	}
+
+	model, _ = updateInputTestApp(t, model, inputTestCtrlJKey())
+	if got := model.input.Height(); got != 2 {
+		t.Fatalf("two-line input height = %d, want 2", got)
+	}
+
+	model.input.SetValue("one\ntwo\nthree\nfour")
+	model.layout()
+	if got := model.input.Height(); got != inputHeight {
+		t.Fatalf("overlong input height = %d, want max %d", got, inputHeight)
+	}
+
+	model.input.SetValue("")
+	model.layout()
+	if got := model.input.Height(); got != 1 {
+		t.Fatalf("cleared input height = %d, want 1", got)
+	}
+}

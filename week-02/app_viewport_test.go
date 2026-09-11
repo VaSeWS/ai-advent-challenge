@@ -72,7 +72,7 @@ func TestAppTranscriptPagingMovesAndClamps(t *testing.T) {
 	bottom := model.viewport.View()
 	model = pressViewportKey(t, model, tea.KeyPgUp)
 	up := model.viewport.View()
-	if !strings.Contains(up, "VIEWPORT_MESSAGE_09") || strings.Contains(up, "VIEWPORT_MESSAGE_11") {
+	if !strings.Contains(up, "VIEWPORT_MESSAGE_08") || strings.Contains(up, "VIEWPORT_MESSAGE_11") {
 		t.Fatalf("PgUp viewport = %q, want earlier transcript content instead of the bottom", up)
 	}
 

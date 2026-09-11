@@ -69,7 +69,7 @@ func NewApp(store *Store, agent *Agent, profile ProviderProfile) tea.Model {
 	input.Placeholder = "Write a message or slash command"
 	input.ShowLineNumbers = false
 	input.MaxHeight = inputHeight
-	input.SetHeight(inputHeight)
+	input.SetHeight(1)
 	// Focus mutates textarea.Model. Init runs on a value copy of app, so the
 	// initial focus state must be established before constructing app.
 	input.Focus()
@@ -117,8 +117,8 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.status = "Request failed."
 			m.errText = msg.err.Error()
-			m.layout()
 			m.input.SetValue(m.submittedInput)
+			m.layout()
 			return m, m.input.Focus()
 		}
 		m.lineage = msg.lineage
@@ -138,8 +138,8 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.status = "Command failed."
 			m.errText = msg.err.Error()
-			m.layout()
 			m.input.SetValue(m.submittedInput)
+			m.layout()
 			return m, m.input.Focus()
 		}
 		if msg.result.Quit {
@@ -177,6 +177,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+j":
 			if !m.busy {
 				m.input.InsertString("\n")
+				m.layout()
 			}
 			return m, nil
 		}
@@ -187,6 +188,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	var cmd tea.Cmd
 	m.input, cmd = m.input.Update(msg)
+	m.layout()
 	return m, cmd
 }
 
@@ -302,7 +304,7 @@ func (m *app) refreshTranscript() {
 func (m *app) layout() {
 	width := m.contentWidth()
 	m.input.SetWidth(width)
-	m.input.SetHeight(inputHeight)
+	m.input.SetHeight(min(inputHeight, max(1, m.input.LineCount())))
 	m.viewport.SetWidth(width)
 	m.viewport.SetHeight(max(1, m.height-1-m.noticeHeight(width)-1-m.input.Height()-1))
 	if m.scrollToBottomAfterLayout && m.width > 0 && m.height > 0 {
