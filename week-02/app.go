@@ -55,6 +55,12 @@ type commandFinishedMsg struct {
 	err    error
 }
 
+// transcriptWheelMsg keeps Bubble Tea's raw mouse event out of the renderer
+// dispatch loop while delivering it to the viewport update path.
+type transcriptWheelMsg struct {
+	wheel tea.MouseWheelMsg
+}
+
 // NewApp creates the full-screen terminal interface and restores the persisted
 // active chat, branch, and transcript before Bubble Tea starts its event loop.
 func NewApp(store *Store, agent *Agent, profile ProviderProfile) tea.Model {
@@ -92,6 +98,10 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.layout()
+		return m, nil
+
+	case transcriptWheelMsg:
+		m.viewport, _ = m.viewport.Update(msg.wheel)
 		return m, nil
 
 	case spinner.TickMsg:
@@ -195,6 +205,14 @@ func (m app) View() tea.View {
 	}
 	view := tea.NewView(content)
 	view.AltScreen = true
+	view.MouseMode = tea.MouseModeCellMotion
+	view.OnMouse = func(mouse tea.MouseMsg) tea.Cmd {
+		wheel, ok := mouse.(tea.MouseWheelMsg)
+		if !ok {
+			return nil
+		}
+		return func() tea.Msg { return transcriptWheelMsg{wheel: wheel} }
+	}
 	return view
 }
 

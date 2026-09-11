@@ -185,3 +185,47 @@ func TestAppSidebarBreakpointPreservesMainContentWidth(t *testing.T) {
 		t.Fatalf("79-column viewport after shrinking = %q, want restored main content width %q", got, withoutSidebar)
 	}
 }
+
+func TestAppMouseWheelScrollsTranscript(t *testing.T) {
+	model := resizeViewportApp(t, newViewportTestApp(t), 40, 12)
+	model.lineage = viewportLineage(12)
+	model.refreshTranscript()
+	model.layout()
+
+	view := model.View()
+	if view.MouseMode != tea.MouseModeCellMotion {
+		t.Fatalf("mouse mode = %v, want cell motion", view.MouseMode)
+	}
+	if view.OnMouse == nil {
+		t.Fatal("view must relay mouse wheel events to the transcript")
+	}
+
+	wheel := tea.MouseWheelMsg{Button: tea.MouseWheelUp}
+	relay := view.OnMouse(wheel)
+	if relay == nil {
+		t.Fatal("mouse wheel relay command is nil")
+	}
+	message := relay()
+	if _, ok := message.(transcriptWheelMsg); !ok {
+		t.Fatalf("wheel relay message = %T, want transcriptWheelMsg", message)
+	}
+
+	updated, _ := model.Update(message)
+	model = updated.(app)
+	if got := model.viewport.View(); !strings.Contains(got, "VIEWPORT_MESSAGE_09") {
+		t.Fatalf("wheel-up viewport = %q, want earlier transcript messages", got)
+	}
+
+	for range 10 {
+		message = view.OnMouse(wheel)()
+		updated, _ = model.Update(message)
+		model = updated.(app)
+	}
+	top := model.viewport.View()
+	message = view.OnMouse(wheel)()
+	updated, _ = model.Update(message)
+	model = updated.(app)
+	if got := model.viewport.View(); got != top {
+		t.Fatalf("wheel-up at top changed viewport from %q to %q", top, got)
+	}
+}
