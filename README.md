@@ -34,3 +34,7 @@ go run ./week-01/day-02 "your question here"
 Sends the same prompt twice and prints both responses side by side: once with no
 constraints, once with an explicit format instruction, a `max_tokens` cap, and an
 explicit stop instruction (finish after the third bullet, write nothing else).
+
+## week-02
+
+See [week-02/README.md](week-02/README.md) for the Context Agent task.
