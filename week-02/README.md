@@ -44,6 +44,47 @@ go run . -db /путь/к/agent.db -provider deepseek
 
 Допустимы только `-provider groq` и `-provider deepseek`. При отсутствии ключа выбранного профиля программа завершается с понятной ошибкой, не подставляя ключи из файлов конфигурации.
 
+## Функции и точки входа
+
+`week-02` — исполняемый `package main`, а не поддерживаемая Go-библиотека: ниже приведена карта реально существующих точек интеграции и операций программы, а не обещание стабильного API.
+
+### Запуск и интерфейс
+
+- `func main()` запускает программу; пользовательский вызов — `go run . [-db <путь>] [-provider <groq|deepseek>]`.
+- Флаг `-db` имеет значение по умолчанию `agent.db` и задаёт путь к SQLite; `-provider` по умолчанию `groq` и принимает только `groq` либо `deepseek`.
+- `func NewApp(store *Store, agent *Agent, profile ProviderProfile) tea.Model` создаёт полноэкранную TUI с восстановленным активным чатом.
+- `func NewCommandService(store *Store, agent *Agent) *CommandService` создаёт обработчик slash-команд, а `func (s *CommandService) Execute(ctx context.Context, chatID, branchID int64, input string) (CommandResult, error)` разбирает и выполняет введённую команду.
+- Полный список операций интерфейса показывает `/help`; он остаётся источником истины для синтаксиса slash-команд.
+
+### Сборка Agent, Store и клиента
+
+- `func OpenStore(path string) (*Store, error)` открывает и мигрирует SQLite-хранилище, создавая начальный чат при новой базе; `func (s *Store) Close() error` освобождает его соединение.
+- `type OpenAICompatibleClient struct` — встроенная HTTP-реализация клиента Chat Completions; `func NewOpenAICompatibleClient(profile ProviderProfile, key string) *OpenAICompatibleClient` создаёт её для уже полученного из окружения ключа.
+- `type Agent struct` координирует сборку контекста, completion и атомарную запись turn; `func NewAgent(store *Store, llm Completer, tokens TokenCounter, profile ProviderProfile) *Agent` связывает его зависимости.
+- `func (a *Agent) Send(ctx context.Context, chatID, branchID int64, input string) (TurnResult, error)` выполняет один пользовательский turn и атомарно сохраняет успешный результат; `func (a *Agent) RebuildFacts(ctx context.Context, chatID, branchID int64) error` заново строит facts текущей lineage.
+- `type Completer interface { Complete(context.Context, CompletionRequest) (Completion, error) }` — контракт LLM-клиента; `func (c *OpenAICompatibleClient) Complete(ctx context.Context, req CompletionRequest) (Completion, error)` — его встроенная OpenAI-compatible реализация.
+
+### Хранилище и его данные
+
+- `store.ActiveChat()`, `store.Chat(chatID)`, `store.Branch(chatID, branchID)`, `store.Chats()`, `store.Branches(chatID)` и `store.Lineage(branchID)` читают активный или указанный разговор, ветки и историю.
+- `store.CreateChat(title)`, `store.UseChat(chatID)`, `store.SwitchBranch(chatID, name)`, `store.SetBranchMode(branchID, strategy)` и `store.SetWindow(branchID, windowSize)` создают либо выбирают разговор и изменяют настройки ветки.
+- `store.Summary(branchID)`, `store.SaveSummary(branchID, update)`, `store.Facts(branchID)`, `store.ReplaceFacts(branchID, facts)` и `store.SaveFactsRebuild(chatID, branchID, facts, calls)` управляют производной памятью ветки.
+- `store.CreateCheckpoint(branchID, name)`, `store.Checkpoint(branchID, name)` и `store.Fork(sourceBranchID, checkpointName, newBranchName)` сохраняют checkpoint и создают ветку без копирования общего префикса.
+- `store.SaveTurn(input)`, `store.Stats(branchID)` и `store.AllStats()` атомарно записывают turn и возвращают учёт API-вызовов соответственно для ветки или всех чатов.
+- `type Store struct` владеет долговечным графом разговоров; `type Chat struct`, `type Branch struct` и `type Message struct` описывают сохранённые чат, ветку и сообщение.
+- `type Summary struct`, `type SummaryUpdate struct`, `type Fact struct`, `type Checkpoint struct` и `type SaveTurnInput struct` передают производную память, её обновления, facts, снимки веток и данные записи turn.
+- `type APICall struct`, `type Usage struct`, `type StatsRow struct` и `type TurnResult struct` описывают учёт вызова, usage, агрегированную статистику и результат отправки.
+
+### Провайдеры, токены и контекст
+
+- `type ProviderProfile struct` задаёт параметры провайдера; `func (p ProviderProfile) Price(usage Usage, startedAt time.Time) Price` рассчитывает тариф вызова, а `type Price struct` содержит его tier и суммы input/output.
+- `type TokenCounter interface { Count(string) int; Label() string; Exact() bool }` задаёт локальный счётчик; выбор профиля через `-provider` определяет используемый счётчик и переменную окружения ключа, но не раскрывает её значение.
+- `func BuildMainPrompt(branch Branch, lineage []Message, summary *Summary, facts map[string]string, input string) ([]CompletionMessage, error)` собирает основной prompt выбранной стратегии.
+- `func LastWindow(lineage []Message, windowSize int) []Message`, `func MessagesAfter(lineage []Message, throughMessageID int64) ([]Message, error)`, `func SummaryBatches(lineage []Message, throughMessageID int64, windowSize int) ([][]Message, error)` и `func FactsBatches(lineage []Message) [][]Message` выделяют нужные части истории.
+- `func BuildSummaryPrompt(previousSummary string, batch []Message) ([]CompletionMessage, error)`, `func BuildFactsPrompt(facts map[string]string, batch []Message) ([]CompletionMessage, error)` и `func FactsSystemBlock(facts map[string]string) string` формируют вспомогательные запросы и блок facts.
+- `func ParseFactsJSON(content string) (map[string]string, error)` валидирует ответ facts; `func PromptTokenCount(counter TokenCounter, prompt []CompletionMessage) int` и `func CheckContextOverflow(counter TokenCounter, profile ProviderProfile, prompt []CompletionMessage) error` считают prompt и проверяют резерв completion.
+- `type CompletionMessage struct`, `type CompletionRequest struct` и `type Completion struct` описывают сообщения, запрос и результат LLM; `type CommandService struct` и `type CommandResult struct` представляют обработчик команд и его display-ready результат.
+
 ## Профили провайдеров
 
 | Свойство | Groq | DeepSeek |
