@@ -32,12 +32,14 @@ type app struct {
 	viewport viewport.Model
 	spinner  spinner.Model
 
-	width   int
-	height  int
-	busy    bool
-	status  string
-	errText string
-	metrics string
+	width                     int
+	height                    int
+	busy                      bool
+	status                    string
+	errText                   string
+	metrics                   string
+	submittedInput            string
+	scrollToBottomAfterLayout bool
 }
 
 type turnFinishedMsg struct {
@@ -106,6 +108,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status = "Request failed."
 			m.errText = msg.err.Error()
 			m.layout()
+			m.input.SetValue(m.submittedInput)
 			return m, m.input.Focus()
 		}
 		m.lineage = msg.lineage
@@ -114,6 +117,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.metrics = msg.result.Metrics
 		m.status = "Response received."
 		m.errText = ""
+		m.submittedInput = ""
 		m.refreshTranscript()
 		m.refreshSidebar()
 		m.layout()
@@ -125,6 +129,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status = "Command failed."
 			m.errText = msg.err.Error()
 			m.layout()
+			m.input.SetValue(m.submittedInput)
 			return m, m.input.Focus()
 		}
 		if msg.result.Quit {
@@ -132,6 +137,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.status = msg.result.Status
 		m.errText = ""
+		m.submittedInput = ""
 		if msg.result.Chat != nil {
 			m.chat = *msg.result.Chat
 		}
@@ -203,6 +209,7 @@ func (m *app) submit() (tea.Model, tea.Cmd) {
 
 	m.busy = true
 	m.errText = ""
+	m.submittedInput = input
 	m.input.SetValue("")
 	m.input.Blur()
 	m.layout()
@@ -271,7 +278,7 @@ func (m *app) refreshSidebar() {
 
 func (m *app) refreshTranscript() {
 	m.viewport.SetContent(renderTranscript(m.lineage))
-	m.viewport.GotoBottom()
+	m.scrollToBottomAfterLayout = true
 }
 
 func (m *app) layout() {
@@ -280,6 +287,10 @@ func (m *app) layout() {
 	m.input.SetHeight(inputHeight)
 	m.viewport.SetWidth(width)
 	m.viewport.SetHeight(max(1, m.height-1-m.noticeHeight(width)-1-m.input.Height()-1))
+	if m.scrollToBottomAfterLayout && m.width > 0 && m.height > 0 {
+		m.viewport.GotoBottom()
+		m.scrollToBottomAfterLayout = false
+	}
 }
 
 func (m app) contentWidth() int {
