@@ -62,6 +62,9 @@ func NewApp(store *Store, agent *Agent, profile ProviderProfile) tea.Model {
 	input.ShowLineNumbers = false
 	input.MaxHeight = inputHeight
 	input.SetHeight(inputHeight)
+	// Focus mutates textarea.Model. Init runs on a value copy of app, so the
+	// initial focus state must be established before constructing app.
+	input.Focus()
 
 	m := app{
 		store:    store,
