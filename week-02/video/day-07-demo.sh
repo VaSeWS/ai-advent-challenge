@@ -40,6 +40,7 @@ demo_tui_wait_for 'Write a message' 10 >/dev/null
     demo_tui_type 'Меня зовут Василий. Цель — сдать домашку второй недели.'
     demo_tui_key Enter
     demo_tui_wait_stable 25 1 >/dev/null
+    demo_pause 4
     demo_tui_type '/quit'
     demo_tui_key Enter
 ) &
@@ -55,6 +56,7 @@ demo_pause 2.5
     demo_tui_type 'Как меня зовут и какова моя цель?'
     demo_tui_key Enter
     demo_tui_wait_stable 25 1 >/dev/null
+    demo_pause 4
     demo_tui_type '/quit'
     demo_tui_key Enter
 ) &

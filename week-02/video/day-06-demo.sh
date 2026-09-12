@@ -39,10 +39,12 @@ demo_tui_wait_for 'Write a message' 10 >/dev/null
     demo_tui_type 'Привет! Объясни одним предложением, что такое AI-агент.'
     demo_tui_key Enter
     demo_tui_wait_stable 25 1 >/dev/null
+    demo_pause 4
 
     demo_tui_type 'Предложи одно применение такого агента в реальном проекте.'
     demo_tui_key Enter
     demo_tui_wait_stable 25 1 >/dev/null
+    demo_pause 4
 
     demo_tui_type '/quit'
     demo_tui_key Enter
