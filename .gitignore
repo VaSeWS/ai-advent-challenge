@@ -21,4 +21,6 @@
 # Recordings — the demo scripts are committed, the videos are not.
 week-*/day-*/video/*.mp4
 week-*/day-*/video/*.mov
+week-*/video/*.mp4
+week-*/video/*.mov
 /week-02/agent.db*

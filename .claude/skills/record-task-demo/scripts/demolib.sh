@@ -94,3 +94,102 @@ demo_repo_root() {
     local dir=${1:-$PWD}
     (cd "$dir" && git rev-parse --show-toplevel 2>/dev/null) || printf '%s' "$dir"
 }
+
+# --- Full-screen TUI helpers (tmux-driven) --------------------------------
+#
+# demo_run/demo_typewrite assume a plain shell prompt that returns after one
+# command. A full-screen program (Bubble Tea, etc.) owns the whole terminal
+# instead, so keystrokes have to be injected into its pty from outside:
+#
+#   demo_tui_start "go run ./week-02 -db \$DB -provider groq" 100 30
+#   demo_tui_wait_for 'Write a message' 10   # app fully rendered, raw mode on
+#   demo_tui_type  'Привет!'
+#   demo_tui_key   Enter
+#   demo_tui_wait_stable 25 1
+#   demo_tui_type  '/quit'
+#   demo_tui_key   Enter
+#   demo_tui_watch   # attaches when recording (real tty), else runs headless
+#   demo_tui_stop
+#
+# Requires tmux. Session name is $TUI_SESSION (default: demo-tui).
+
+TUI_SESSION=${TUI_SESSION:-demo-tui}
+
+demo_tui_require() {
+    command -v tmux >/dev/null 2>&1 || {
+        printf '%serror: tmux is required for TUI demos (brew install tmux)%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        exit 1
+    }
+}
+
+# Start the program detached inside a tmux session.
+demo_tui_start() {
+    local cmd=$1 cols=${2:-100} rows=${3:-30}
+    demo_tui_require
+    tmux kill-session -t "$TUI_SESSION" 2>/dev/null || true
+    tmux new-session -d -s "$TUI_SESSION" -x "$cols" -y "$rows" "$cmd"
+}
+
+# Type text into the running TUI, one character at a time (visible typing).
+demo_tui_type() {
+    local text=$1 i ch
+    for ((i = 0; i < ${#text}; i++)); do
+        ch=${text:i:1}
+        tmux send-keys -t "$TUI_SESSION" -l -- "$ch" 2>/dev/null || true
+        demo_nap "$SPEED"
+    done
+}
+
+# Send a named key (Enter, C-c, PageUp, PageDown, ...) to the TUI.
+demo_tui_key() {
+    tmux send-keys -t "$TUI_SESSION" "$1" 2>/dev/null || true
+}
+
+# Block until the visible pane stops changing for `stable_for` seconds (the
+# async response finished rendering) or `timeout` seconds pass. The actual
+# API call this waits on is real and cannot be sped up, so the poll delay
+# uses /bin/sleep (absolute path) rather than bare `sleep` — dryrun.sh puts a
+# no-op `sleep` earlier on PATH to make one-shot demo_run commands replay
+# instantly, and a zeroed poll delay here would busy-loop capture-pane fast
+# enough to starve the tmux server and race the real response.
+demo_tui_wait_for() {
+    local pattern=$1 timeout=${2:-20} start now
+    start=$(date +%s)
+    while true; do
+        tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null | grep -qF "$pattern" && return 0
+        now=$(date +%s)
+        [ $((now - start)) -ge "$timeout" ] && return 1
+        /bin/sleep 0.2 2>/dev/null || true
+    done
+}
+
+demo_tui_wait_stable() {
+    local timeout=${1:-20} stable_for=${2:-1} start now prev cur last_change
+    start=$(date +%s); last_change=$start; prev=$'\x01'
+    while true; do
+        cur=$(tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null || true)
+        now=$(date +%s)
+        if [ "$cur" != "$prev" ]; then prev=$cur; last_change=$now; fi
+        [ $((now - last_change)) -ge "$stable_for" ] && return 0
+        [ $((now - start)) -ge "$timeout" ] && return 1
+        /bin/sleep 0.3 2>/dev/null || true
+    done
+}
+
+# Attach the recording terminal to the TUI session when there is a real tty
+# to attach from (the Terminal.app window record.sh opens); otherwise this is
+# a dry run with no tty, so just wait for the caller's background sender
+# and print the final pane content for inspection.
+demo_tui_watch() {
+    if [ -t 1 ] && [ -t 0 ]; then
+        tmux attach -t "$TUI_SESSION"
+    else
+        wait 2>/dev/null || true
+        tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null || true
+    fi
+}
+
+demo_tui_stop() {
+    tmux kill-session -t "$TUI_SESSION" 2>/dev/null || true
+}
