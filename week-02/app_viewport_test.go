@@ -229,3 +229,37 @@ func TestAppMouseWheelScrollsTranscript(t *testing.T) {
 		t.Fatalf("wheel-up at top changed viewport from %q to %q", top, got)
 	}
 }
+
+func TestAppShowsMultiRowCommandOutput(t *testing.T) {
+	rows := make([]string, 8)
+	for i := range rows {
+		rows[i] = fmt.Sprintf("STATS_ROW_%02d", i)
+	}
+	status := "stats:\n" + strings.Join(rows, "\n")
+
+	model := resizeViewportApp(t, newViewportTestApp(t), 60, 45)
+	model.status = status
+	model.layout()
+
+	notice := model.notice(60)
+	if got, want := strings.Count(notice, "\n")+1, 9; got != want {
+		t.Fatalf("notice lines = %d, want %d", got, want)
+	}
+	if !strings.Contains(notice, "STATS_ROW_07") {
+		t.Fatalf("notice = %q, want the last stats row visible", notice)
+	}
+	if model.viewport.Height() < 1 {
+		t.Fatalf("viewport height = %d, want at least 1", model.viewport.Height())
+	}
+
+	tiny := resizeViewportApp(t, newViewportTestApp(t), 60, 9)
+	tiny.status = status
+	tiny.layout()
+
+	if got, want := strings.Count(tiny.notice(60), "\n")+1, 3; got != want {
+		t.Fatalf("tiny terminal notice lines = %d, want %d", got, want)
+	}
+	if tiny.viewport.Height() < 1 {
+		t.Fatalf("tiny viewport height = %d, want at least 1", tiny.viewport.Height())
+	}
+}

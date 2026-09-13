@@ -339,7 +339,7 @@ func (m app) notice(width int) string {
 	if m.busy {
 		lines = append(lines, clipText(m.spinner.View()+" "+m.status, width, 1))
 	} else if m.status != "" {
-		lines = append(lines, clipText(m.status, width, 3))
+		lines = append(lines, clipText(m.status, width, statusLimit(m.height)))
 	}
 	if m.errText != "" {
 		lines = append(lines, clipText("error: "+m.errText, width, 2))
@@ -348,6 +348,14 @@ func (m app) notice(width int) string {
 		lines = append(lines, clipText(m.metrics, width, 2))
 	}
 	return strings.Join(lines, "\n")
+}
+
+// statusLimit keeps a multi-row command result (/stats, /facts, /summary)
+// readable without letting it push the transcript off the screen: at most a
+// third of the terminal, and never less than the three lines a short status
+// needs.
+func statusLimit(height int) int {
+	return min(12, max(3, height/3))
 }
 
 func (m app) noticeHeight(width int) int {
