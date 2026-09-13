@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -84,6 +85,45 @@ func TestStoreReopenRestoresState(t *testing.T) {
 	}
 	if !reflect.DeepEqual(facts, []Fact{{Key: "topic", Value: "persistence"}}) {
 		t.Fatalf("reopened facts = %#v, want persisted fact", facts)
+	}
+}
+
+func TestSummaryCommandShowsStoredSummary(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "chat.sqlite"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	chat, branch, err := store.ActiveChat()
+	if err != nil {
+		t.Fatalf("load active chat: %v", err)
+	}
+	commands := NewCommandService(store, nil)
+
+	result, err := commands.Execute(t.Context(), chat.ID, branch.ID, "/summary")
+	if err != nil {
+		t.Fatalf("execute /summary: %v", err)
+	}
+	if got, want := result.Status, "summary:\n(no summary)"; got != want {
+		t.Fatalf("empty summary status = %q, want %q", got, want)
+	}
+
+	assistant := saveTestTurn(t, store, chat.ID, branch.ID, "вопрос", "ответ")
+	if err := store.SaveSummary(branch.ID, SummaryUpdate{
+		ThroughMessageID: assistant.ID,
+		Content:          "цель: собрать ТЗ",
+	}); err != nil {
+		t.Fatalf("save summary: %v", err)
+	}
+
+	result, err = commands.Execute(t.Context(), chat.ID, branch.ID, "/summary")
+	if err != nil {
+		t.Fatalf("execute /summary after save: %v", err)
+	}
+	want := fmt.Sprintf("summary (through message %d):\nцель: собрать ТЗ", assistant.ID)
+	if result.Status != want {
+		t.Fatalf("summary status = %q, want %q", result.Status, want)
 	}
 }
 

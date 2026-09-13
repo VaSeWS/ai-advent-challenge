@@ -20,7 +20,7 @@ func run(args []string) (err error) {
 	flags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	dbPath := flags.String("db", "agent.db", "SQLite database path")
-	providerName := flags.String("provider", "groq", "LLM provider: groq or deepseek")
+	providerName := flags.String("provider", "groq", "LLM provider: groq, deepseek or local")
 	if err := flags.Parse(args); err != nil {
 		return fmt.Errorf("parse flags: %w", err)
 	}
@@ -30,9 +30,12 @@ func run(args []string) (err error) {
 		return err
 	}
 
-	key := os.Getenv(profile.KeyEnv)
-	if key == "" {
-		return fmt.Errorf("%s environment variable is not set", profile.KeyEnv)
+	key := ""
+	if profile.KeyEnv != "" {
+		key = os.Getenv(profile.KeyEnv)
+		if key == "" {
+			return fmt.Errorf("%s environment variable is not set", profile.KeyEnv)
+		}
 	}
 
 	store, err := OpenStore(*dbPath)

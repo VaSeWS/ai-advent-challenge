@@ -20,6 +20,14 @@ func (c omniCounter) Count(text string) int { return c.engine.CountTokens(text) 
 func (omniCounter) Label() string           { return "o200k_harmony" }
 func (omniCounter) Exact() bool             { return true }
 
+// cl100kCounter approximates the Llama 3 tokenizer: both are byte-level BPE
+// built on tiktoken, so cl100k_base counts slightly high — safe for a guard.
+type cl100kCounter struct{ engine omnitoken.ModelEngine }
+
+func (c cl100kCounter) Count(text string) int { return c.engine.CountTokens(text) }
+func (cl100kCounter) Label() string           { return "cl100k-approx" }
+func (cl100kCounter) Exact() bool             { return false }
+
 type deepSeekCounter struct{}
 
 func (deepSeekCounter) Count(text string) int {
@@ -42,6 +50,10 @@ var (
 	o200kHarmonyOnce   sync.Once
 	o200kHarmonyEngine omnitoken.ModelEngine
 	o200kHarmonyErr    error
+
+	cl100kOnce   sync.Once
+	cl100kEngine omnitoken.ModelEngine
+	cl100kErr    error
 )
 
 func newTokenCounter(profile ProviderProfile) (TokenCounter, error) {
@@ -56,6 +68,14 @@ func newTokenCounter(profile ProviderProfile) (TokenCounter, error) {
 			return nil, o200kHarmonyErr
 		}
 		return omniCounter{engine: o200kHarmonyEngine}, nil
+	case "cl100k_base":
+		cl100kOnce.Do(func() {
+			cl100kEngine, cl100kErr = omnitoken.ForEncoding(omnitoken.EncodingCL100KBase)
+		})
+		if cl100kErr != nil {
+			return nil, cl100kErr
+		}
+		return cl100kCounter{engine: cl100kEngine}, nil
 	default:
 		return nil, fmt.Errorf("unsupported token counter %q", profile.CounterEncoding)
 	}

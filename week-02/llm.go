@@ -46,7 +46,9 @@ func (c *OpenAICompatibleClient) Complete(ctx context.Context, req CompletionReq
 	if err != nil {
 		return Completion{}, err
 	}
-	httpReq.Header.Set("Authorization", "Bearer "+c.key)
+	if c.key != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+c.key)
+	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	response, err := c.http.Do(httpReq)

@@ -30,6 +30,13 @@ func TestProviderProfiles(t *testing.T) {
 				ContextWindow: 1000000, MainMax: 2048, AuxiliaryMax: 512, MaxTokensField: "max_tokens", ReasoningEffort: "none", ThinkingDisabled: true, CounterEncoding: "deepseek-v4-estimate",
 			},
 		},
+		{
+			name: "local",
+			want: ProviderProfile{
+				Name: "local", Endpoint: "http://localhost:11434/v1/chat/completions", Model: "llama3-ctx2k", KeyEnv: "",
+				ContextWindow: 2048, MainMax: 512, AuxiliaryMax: 256, MaxTokensField: "max_tokens", CounterEncoding: "cl100k_base",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -50,7 +57,7 @@ func TestProviderProfileRejectsUnknownName(t *testing.T) {
 	if err == nil {
 		t.Fatal("providerProfile(\"other\") returned nil error")
 	}
-	if got, want := err.Error(), "unknown provider \"other\" (expected groq or deepseek)"; got != want {
+	if got, want := err.Error(), "unknown provider \"other\" (expected groq, deepseek or local)"; got != want {
 		t.Fatalf("providerProfile(\"other\") error = %q, want %q", got, want)
 	}
 }
@@ -113,6 +120,76 @@ func TestDeepSeekPricePeakBoundaries(t *testing.T) {
 			requireFloatEqual(t, got.InputCostUSD, test.input)
 			requireFloatEqual(t, got.OutputCostUSD, test.output)
 		})
+	}
+}
+
+func TestLocalPriceIsFree(t *testing.T) {
+	profile, err := providerProfile("local")
+	if err != nil {
+		t.Fatalf("load local profile: %v", err)
+	}
+
+	got := profile.Price(Usage{
+		PromptTokens:         1800,
+		UncachedPromptTokens: 1800,
+		CompletionTokens:     400,
+		TotalTokens:          2200,
+	}, time.Date(2026, time.March, 2, 1, 0, 0, 0, time.UTC))
+
+	if got.Tier != "local" {
+		t.Fatalf("price tier = %q, want local", got.Tier)
+	}
+	requireFloatEqual(t, got.InputCostUSD, 0)
+	requireFloatEqual(t, got.OutputCostUSD, 0)
+}
+
+func TestLocalProfileUsesApproximateCounter(t *testing.T) {
+	profile, err := providerProfile("local")
+	if err != nil {
+		t.Fatalf("load local profile: %v", err)
+	}
+	counter, err := newTokenCounter(profile)
+	if err != nil {
+		t.Fatalf("create token counter: %v", err)
+	}
+
+	if got, want := counter.Label(), "cl100k-approx"; got != want {
+		t.Fatalf("counter label = %q, want %q", got, want)
+	}
+	if counter.Exact() {
+		t.Fatal("local counter reports exact counts, want estimate")
+	}
+	if got := counter.Count("Сколько токенов в этой строке?"); got <= 0 {
+		t.Fatalf("counter counted %d tokens for a non-empty string", got)
+	}
+}
+
+func TestOpenAICompatibleClientOmitsAuthorizationWithoutKey(t *testing.T) {
+	profile, err := providerProfile("local")
+	if err != nil {
+		t.Fatalf("load local profile: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "" {
+			t.Errorf("Authorization = %q, want no header", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"answer"},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":5,"total_tokens":17}}`))
+	}))
+	defer server.Close()
+
+	profile.Endpoint = server.URL
+	client := NewOpenAICompatibleClient(profile, "")
+	got, err := client.Complete(context.Background(), CompletionRequest{
+		Messages:  []CompletionMessage{{Role: "user", Content: "question"}},
+		MaxTokens: profile.MainMax,
+	})
+	if err != nil {
+		t.Fatalf("complete: %v", err)
+	}
+	if got.Content != "answer" {
+		t.Fatalf("completion content = %q, want answer", got.Content)
 	}
 }
 

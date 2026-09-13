@@ -199,6 +199,16 @@ func (s *CommandService) Execute(ctx context.Context, chatID, branchID int64, in
 		}
 		return CommandResult{Status: formatFacts(facts)}, nil
 
+	case "/summary":
+		if len(fields) != 1 {
+			return commandError("usage: /summary")
+		}
+		summary, err := s.store.Summary(branchID)
+		if err != nil {
+			return commandError("%v", err)
+		}
+		return CommandResult{Status: formatSummary(summary)}, nil
+
 	case "/stats":
 		all := len(fields) == 2 && fields[1] == "all"
 		if len(fields) != 1 && !all {
@@ -340,6 +350,13 @@ func formatFacts(facts []Fact) string {
 	return status.String()
 }
 
+func formatSummary(summary *Summary) string {
+	if summary == nil {
+		return "summary:\n(no summary)"
+	}
+	return fmt.Sprintf("summary (through message %d):\n%s", summary.ThroughMessageID, summary.Content)
+}
+
 func formatStats(stats []StatsRow, all bool) string {
 	heading := "stats:"
 	if all {
@@ -367,6 +384,7 @@ const helpText = `commands:
 /branches
 /switch <branch-name>
 /facts
+/summary
 /stats [all]
 /help
 /quit`

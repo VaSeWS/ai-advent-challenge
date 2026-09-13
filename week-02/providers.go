@@ -27,17 +27,25 @@ var providerProfiles = map[string]ProviderProfile{
 		Name: "deepseek", Endpoint: "https://api.deepseek.com/chat/completions", Model: "deepseek-flash", KeyEnv: "DEEPSEEK_API_KEY",
 		ContextWindow: 1000000, MainMax: 2048, AuxiliaryMax: 512, MaxTokensField: "max_tokens", ReasoningEffort: "none", ThinkingDisabled: true, CounterEncoding: "deepseek-v4-estimate",
 	},
+	"local": {
+		Name: "local", Endpoint: "http://localhost:11434/v1/chat/completions", Model: "llama3-ctx2k", KeyEnv: "",
+		ContextWindow: 2048, MainMax: 512, AuxiliaryMax: 256, MaxTokensField: "max_tokens", CounterEncoding: "cl100k_base",
+	},
 }
 
 func providerProfile(name string) (ProviderProfile, error) {
 	profile, ok := providerProfiles[name]
 	if !ok {
-		return ProviderProfile{}, fmt.Errorf("unknown provider %q (expected groq or deepseek)", name)
+		return ProviderProfile{}, fmt.Errorf("unknown provider %q (expected groq, deepseek or local)", name)
 	}
 	return profile, nil
 }
 
 func (p ProviderProfile) Price(usage Usage, startedAt time.Time) Price {
+	if p.Name == "local" {
+		return Price{Tier: "local"}
+	}
+
 	promptTokens := max(0, usage.PromptTokens)
 	cachedTokens := min(max(0, usage.CachedPromptTokens), promptTokens)
 	uncachedTokens := max(0, usage.UncachedPromptTokens)

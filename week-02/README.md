@@ -42,7 +42,28 @@ export DEEPSEEK_API_KEY='ваш_ключ_в_окружении'
 go run . -db /путь/к/agent.db -provider deepseek
 ```
 
-Допустимы только `-provider groq` и `-provider deepseek`. При отсутствии ключа выбранного профиля программа завершается с понятной ошибкой, не подставляя ключи из файлов конфигурации.
+Третий профиль — `local`: та же программа, тот же TUI, но модель выполняется на своей машине через Ollama, поэтому ключ не нужен вовсе:
+
+```sh
+cd week-02
+go run . -db /путь/к/agent.db -provider local
+```
+
+Профиль ожидает модель `llama3-ctx2k` — это `llama3` с окном контекста 2048, созданная из Modelfile:
+
+```sh
+printf 'FROM llama3:latest\nPARAMETER num_ctx 2048\n' > Modelfile.ctx2k
+ollama create llama3-ctx2k -f Modelfile.ctx2k
+ollama serve   # если сервер ещё не запущен
+```
+
+Допустимы только `-provider groq`, `-provider deepseek` и `-provider local`. При отсутствии ключа выбранного профиля программа завершается с понятной ошибкой, не подставляя ключи из файлов конфигурации; профиль `local` не читает переменных окружения ключей и не отправляет заголовок авторизации.
+
+### Зачем локальный профиль
+
+Он нужен для сценария переполнения контекста. У Groq окно 131072, у DeepSeek — 1000000: в живом диалоге столько не набрать, переполнение приходится имитировать вставкой заранее сгенерированного блока. У `llama3-ctx2k` окно 2048, поэтому обычный диалог из нескольких реплик упирается в границу сам, без искусственных вставок, без ключей, без rate limit и без оплаты.
+
+Второе отличие важно ещё больше: если тот же переполненный prompt отправить в Ollama напрямую, ошибки не будет. Замер на Ollama 0.33.3 показал, что промпт на 10000+ токенов молча превращается в `prompt_tokens: 1036` — сервер обрезает середину и модель отвечает по остаткам, не сообщая об этом. Guard week-02 (`prompt + reserve > context window`) ловит ту же ситуацию до вызова и говорит о ней явно. Контраст между этими двумя поведениями и есть ответ на вопрос «что ломается при переполнении».
 
 ## Функции и точки входа
 
@@ -51,7 +72,7 @@ go run . -db /путь/к/agent.db -provider deepseek
 ### Запуск и интерфейс
 
 - `func main()` запускает программу; пользовательский вызов — `go run . [-db <путь>] [-provider <groq|deepseek>]`.
-- Флаг `-db` имеет значение по умолчанию `agent.db` и задаёт путь к SQLite; `-provider` по умолчанию `groq` и принимает только `groq` либо `deepseek`.
+- Флаг `-db` имеет значение по умолчанию `agent.db` и задаёт путь к SQLite; `-provider` по умолчанию `groq` и принимает только `groq`, `deepseek` либо `local`.
 - `func NewApp(store *Store, agent *Agent, profile ProviderProfile) tea.Model` создаёт полноэкранную TUI с восстановленным активным чатом.
 - `func NewCommandService(store *Store, agent *Agent) *CommandService` создаёт обработчик slash-команд, а `func (s *CommandService) Execute(ctx context.Context, chatID, branchID int64, input string) (CommandResult, error)` разбирает и выполняет введённую команду.
 - Полный список операций интерфейса показывает `/help`; он остаётся источником истины для синтаксиса slash-команд.
@@ -87,16 +108,16 @@ go run . -db /путь/к/agent.db -provider deepseek
 
 ## Профили провайдеров
 
-| Свойство | Groq | DeepSeek |
-| --- | --- | --- |
-| Переменная окружения | `GROQ_API_KEY` | `DEEPSEEK_API_KEY` |
-| Endpoint | `https://api.groq.com/openai/v1/chat/completions` | `https://api.deepseek.com/chat/completions` |
-| Модель | `openai/gpt-oss-20b` | `deepseek-flash` |
-| Окно контекста | 131072 | 1000000 |
-| Максимум completion для основного вызова | 2048 | 2048 |
-| Максимум completion для summary/facts | 512 | 512 |
-| Поле лимита в запросе | `max_completion_tokens` | `max_tokens` |
-| Дополнительные параметры | `reasoning_effort="low"` | `thinking={"type":"disabled"}`, `reasoning_effort="none"` |
+| Свойство | Groq | DeepSeek | Local |
+| --- | --- | --- | --- |
+| Переменная окружения | `GROQ_API_KEY` | `DEEPSEEK_API_KEY` | не требуется |
+| Endpoint | `https://api.groq.com/openai/v1/chat/completions` | `https://api.deepseek.com/chat/completions` | `http://localhost:11434/v1/chat/completions` |
+| Модель | `openai/gpt-oss-20b` | `deepseek-flash` | `llama3-ctx2k` |
+| Окно контекста | 131072 | 1000000 | 2048 |
+| Максимум completion для основного вызова | 2048 | 2048 | 512 |
+| Максимум completion для summary/facts | 512 | 512 | 256 |
+| Поле лимита в запросе | `max_completion_tokens` | `max_tokens` | `max_tokens` |
+| Дополнительные параметры | `reasoning_effort="low"` | `thinking={"type":"disabled"}`, `reasoning_effort="none"` | нет |
 
 Перед основным запросом программа резервирует максимум основного completion: `guard_tokens + 2048` не должен превышать окно профиля. Если условие нарушено, LLM не вызывается и TUI сообщает:
 
@@ -132,6 +153,7 @@ context overflow: prompt <N> + reserve <N> exceeds <N>; use /mode summary, /mode
 | `/branches` | Вывести имена веток и отметку активной. |
 | `/switch <branch-name>` | Переключить активную ветку. |
 | `/facts` | Вывести facts активной ветки в сортированном виде. |
+| `/summary` | Вывести сохранённое резюме активной ветки и id сообщения, по которое оно построено. |
 | `/stats` | Показать метрики активной ветки, сгруппированные по strategy и kind. |
 | `/stats all` | Показать метрики всех чатов. |
 | `/help` | Показать эту поверхность команд. |
@@ -158,7 +180,7 @@ provider=<name>/<model> | local[<counter-label>] current=<n> history=<n> sent=<n
 
 `current` — локальная оценка текущего ввода, `history` — вся raw lineage до него, `sent` — реально собранный strategy prompt, `response` — видимый ответ. Они различаются намеренно: например, sliding отправляет меньше, чем хранится в истории.
 
-Для Groq локальный счётчик `o200k_harmony` точный (`exact=true`) для модели GPT-OSS. Для DeepSeek локальный `deepseek-v4-estimate` — консервативная оценка, а не billing-истина: ASCII-символы оцениваются как `ceil(0.3*n)`, не-ASCII как `ceil(0.6*n)`, а для guard берётся максимум этой оценки и числа runes. В обоих случаях авторитетные значения для биллинга и статистики — поля `usage`, возвращённые API. Клиент сохраняет prompt, completion, total, cached и uncached prompt usage каждого основного и вспомогательного вызова.
+Для Groq локальный счётчик `o200k_harmony` точный (`exact=true`) для модели GPT-OSS. Для DeepSeek локальный `deepseek-v4-estimate` — консервативная оценка, а не billing-истина: ASCII-символы оцениваются как `ceil(0.3*n)`, не-ASCII как `ceil(0.6*n)`, а для guard берётся максимум этой оценки и числа runes. Для `local` счётчик `cl100k-approx` — тоже оценка: токенизатор Llama 3 — byte-level BPE на базе tiktoken, и `cl100k_base` даёт близкий, слегка завышенный результат, из-за чего guard срабатывает чуть раньше настоящей границы, а не позже. Во всех случаях авторитетные значения для биллинга и статистики — поля `usage`, возвращённые API. Клиент сохраняет prompt, completion, total, cached и uncached prompt usage каждого основного и вспомогательного вызова.
 
 ### Тарифы
 
@@ -179,6 +201,8 @@ provider=<name>/<model> | local[<counter-label>] current=<n> history=<n> sent=<n
 | `peak` | $0.006 | $0.30 | $1.20 |
 | `off-peak` | $0.003 | $0.15 | $0.60 |
 
+**Local, tier `local`:** запуск на своей машине ничего не стоит, поэтому input и output costs записываются нулями, а строка статуса показывает `cost=$0.000000`. В `/stats` такие вызовы отличаются от облачных именно tier'ом.
+
 Для DeepSeek `peak` определяется в UTC только с понедельника по пятницу в интервалах `[01:00, 04:00)` и `[06:00, 10:00)`; всё остальное, включая выходные и границы интервалов, — `off-peak`. Cached/uncached breakdown нормализуется из provider-specific API usage; если API не прислал breakdown, весь prompt считается uncached.
 
 ## Сценарии сравнения
@@ -187,6 +211,6 @@ provider=<name>/<model> | local[<counter-label>] current=<n> history=<n> sent=<n
 
 1. **Короткий диалог.** В `full` отправьте несколько связанных коротких реплик. Затем переключите `/mode sliding` и `/window 2`: последние две raw реплики останутся в prompt, а старые сохранятся в базе. Вернитесь в `full`, чтобы сравнить полный контекст с ограниченным окном.
 2. **Длинный диалог.** В `summary` накопите более десяти сообщений, оставляя небольшой `/window`. Следующий turn создаст вспомогательное резюме старой части; `/stats` позволит увидеть отдельно расходы `summary` и `main`. В `facts` выполните `/facts` после rebuild, чтобы сравнить сжатую ключевую память с narrative summary.
-3. **Overflow.** Увеличивайте объём сообщений в `full` до сообщения `context overflow`. Затем используйте `/mode summary`, `/mode sliding` или `/mode facts` для уменьшения отправляемого контекста; эти варианты предложены самой диагностикой.
+3. **Overflow.** Запустите `-provider local` и в `full` ведите обычный диалог: окна 2048 хватает на несколько реплик, после чего появляется `context overflow`. Затем используйте `/mode summary`, `/mode sliding` или `/mode facts` для уменьшения отправляемого контекста; эти варианты предложены самой диагностикой. На Groq и DeepSeek тот же эффект достижим только искусственно большим вводом.
 4. **Все пять стратегий.** На одном и том же диалоге сравните: `full` для полного дословного прошлого, `summary` для сохранения смысловой нити, `sliding` для недавнего хвоста, `facts` для устойчивых договорённостей и `branching` для альтернативных продолжений. Сравнение корректнее проводить с одинаковыми input и window, отслеживая `sent`, API usage и cost.
 5. **Ветки.** Включите `/mode branching`, создайте `/checkpoint base`, затем `/fork base option-a` и продолжите вариант A. Вернитесь на исходную ветку через `/switch main`, создайте `/fork base option-b` и продолжите вариант B. `/branches` и переключение веток должны показывать общий prefix и изолированные suffix.
