@@ -146,6 +146,39 @@ demo_tui_key() {
     tmux send-keys -t "$TUI_SESSION" "$1" 2>/dev/null || true
 }
 
+# Insert a whole block of text in one shot (no per-character typing effect) —
+# for payloads too large or too uninteresting to type out, e.g. a calibrated
+# oversized paste used to demonstrate a context-overflow guard.
+#
+# Uses tmux's paste-buffer mechanism, not send-keys: `send-keys -l` passes
+# the text as a single tmux command argument, which tmux itself refuses past
+# a length far below what a context-overflow payload needs ("command too
+# long"). paste-buffer has no such limit, but ALSO needs -p (bracketed
+# paste) — without it, tmux still feeds the buffer to the pane one byte at a
+# time, exactly like typing, so a 130,000-character payload can take tens of
+# seconds to land and races whatever comes next in the script. With -p the
+# target program receives it as a single paste event (if it handles
+# bracketed paste, as bubbles/textarea does) and it appears in well under a
+# second.
+demo_tui_paste() {
+    local text=$1 file
+    file=$(mktemp -t demo-tui-paste)
+    printf '%s' "$text" > "$file"
+    tmux load-buffer -b demo_tui_paste "$file" 2>/dev/null || true
+    tmux paste-buffer -p -t "$TUI_SESSION" -b demo_tui_paste 2>/dev/null || true
+    tmux delete-buffer -b demo_tui_paste 2>/dev/null || true
+    rm -f "$file"
+}
+
+# Detach the attached recording terminal from the TUI session without
+# stopping the program — lets the demo script regain the outer terminal to
+# print a caption (demo_note/demo_pause) between two full-screen phases,
+# then call demo_tui_watch again to reattach. No-op if nothing is attached
+# (e.g. during a headless dry run).
+demo_tui_detach() {
+    tmux detach-client -s "$TUI_SESSION" 2>/dev/null || true
+}
+
 # Block until the visible pane stops changing for `stable_for` seconds (the
 # async response finished rendering) or `timeout` seconds pass. The actual
 # API call this waits on is real and cannot be sped up, so the poll delay
