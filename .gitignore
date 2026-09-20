@@ -24,3 +24,4 @@ week-*/day-*/video/*.mov
 week-*/video/*.mp4
 week-*/video/*.mov
 /week-02/agent.db*
+/week-03/agent.db*
