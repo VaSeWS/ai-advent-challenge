@@ -97,24 +97,27 @@ user has to enable their terminal app in System Settings > Privacy & Security
 > Screen & System Audio Recording and restart that app. This is theirs to do,
 not something to work around.
 
-### 6. Upload to Yandex.Disk
+### 6. Publish through the local Yandex Disk MCP server
 
 ```
 .claude/skills/record-task-demo/scripts/upload_yadisk.sh week-NN/day-NN/video/day-NN-demo.mp4
 ```
 
-The script calls `go run ./week-04/day-17 upload <file>`: a local MCP client
-invokes the `publish_video` tool on our Yandex Disk MCP server. It reads
-`YANDEX_DISK_TOKEN` from the environment, falling back to `<repo>/.env`
-(same gitignored file as `GROQ_API_KEY` — add a `YANDEX_DISK_TOKEN=...` line
-there once, get the token from https://yandex.ru/dev/disk/poligon/). The
-remote path is derived from the video filename and week folder; for the
-standard file it is `/ai-advent-challenge/week-N/day-NN-demo.mp4`. Missing
-folders are created. Only after the tool returns a public link does the
-script delete the local `.mp4`. Without a token anywhere, tell the
-user to drag the file into disk.yandex.ru — do not stall the rest of the
-work on it, and skip the auto-delete (the local file is their only copy
-until the manual upload finishes).
+Use this uploader for every recording. It invokes
+`go run ./week-04/day-17 upload <file>` from the repository root: the Go
+client connects to the local stdio MCP server, calls `publish_video`, and
+prints the returned public URL. Do not replace this MCP call with direct
+Yandex Disk REST requests, manual `curl` uploads, or a third-party MCP server.
+
+The uploader reads `YANDEX_DISK_TOKEN` from the environment, falling back
+to the gitignored `<repo>/.env` (obtain the token from
+https://yandex.ru/dev/disk/poligon/). The Go code reads only the environment.
+The MCP tool derives `/ai-advent-challenge/week-N/day-NN-demo.mp4` from the
+standard local video path, creates missing folders, uploads and publishes the
+file, and returns its public link. The uploader deletes the local `.mp4`
+**only after** the MCP call succeeds; on failure retain it for another try.
+If no token is available, leave the local file untouched and ask for a token
+or a manual upload; request the resulting public link before reporting.
 
 ### 7. Commit, push, and report the two links
 
@@ -133,7 +136,7 @@ exactly this shape — nothing else, no extra commentary:
 
 ```
 Код: https://github.com/<owner>/<repo>/tree/main/week-NN/day-NN
-Видео: <public link from upload_yadisk.sh>
+Видео: <public link returned by the MCP upload>
 ```
 
 Get `<owner>/<repo>` from `git remote get-url origin` (strip `.git` and any
@@ -155,10 +158,11 @@ before printing this block — don't guess it.
 
 ## Key safety
 
-`GROQ_API_KEY` must never appear in a frame. The key lives in `.env` and
-`record.sh` passes it through a temporary launcher, so it never reaches the
-Terminal window, the AppleScript, or a process argument. When the demo needs
-to show that a key is being used, type a masked line instead:
+`GROQ_API_KEY` and `YANDEX_DISK_TOKEN` must never appear in a frame. The
+keys live in `.env` and `record.sh` passes them through a temporary launcher,
+so neither reaches the Terminal window, the AppleScript, or a process
+argument. When the demo needs to show that a key is being used, type a
+masked line instead:
 
 ```bash
 demo_run_masked 'export GROQ_API_KEY=gsk_••••••••••••••••••••••••' 'true'
@@ -176,7 +180,7 @@ Never `echo` the variable, never `env | grep`, never `cat .env`.
     ├── demolib.sh               typing effect, prompt, shot helpers
     ├── dryrun.sh                instant replay of a demo, real commands
     ├── record.sh                Terminal window + screencapture → .mp4
-    └── upload_yadisk.sh         upload + public link
+    └── upload_yadisk.sh         local MCP client invocation + public link
 ```
 
 The recordings themselves stay out of git (`*.mp4` is ignored under each
