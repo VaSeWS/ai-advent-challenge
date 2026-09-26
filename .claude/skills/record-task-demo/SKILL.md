@@ -103,13 +103,15 @@ not something to work around.
 .claude/skills/record-task-demo/scripts/upload_yadisk.sh week-NN/day-NN/video/day-NN-demo.mp4
 ```
 
-`YANDEX_DISK_TOKEN` is read from the environment, falling back to `<repo>/.env`
+The script calls `go run ./week-04/day-17 upload <file>`: a local MCP client
+invokes the `publish_video` tool on our Yandex Disk MCP server. It reads
+`YANDEX_DISK_TOKEN` from the environment, falling back to `<repo>/.env`
 (same gitignored file as `GROQ_API_KEY` — add a `YANDEX_DISK_TOKEN=...` line
 there once, get the token from https://yandex.ru/dev/disk/poligon/). The
-remote path is derived automatically as `/ai-advent-challenge/week-N/day-NN-demo.mp4`,
-missing folders are created, and the script prints a public link. Once the
-upload succeeds the script deletes the local `.mp4` — the file only ever
-lives on Yandex.Disk after this step. Without a token anywhere, tell the
+remote path is derived from the video filename and week folder; for the
+standard file it is `/ai-advent-challenge/week-N/day-NN-demo.mp4`. Missing
+folders are created. Only after the tool returns a public link does the
+script delete the local `.mp4`. Without a token anywhere, tell the
 user to drag the file into disk.yandex.ru — do not stall the rest of the
 work on it, and skip the auto-delete (the local file is their only copy
 until the manual upload finishes).

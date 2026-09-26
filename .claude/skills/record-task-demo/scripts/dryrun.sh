@@ -23,10 +23,12 @@ if [ ! -f "$ENV_FILE" ]; then
     [ -n "$common" ] && ENV_FILE="$(dirname "$common")/.env"
 fi
 
-if [ -z "${GROQ_API_KEY:-}" ] && [ -f "$ENV_FILE" ]; then
-    GROQ_API_KEY=$(grep -m1 '^GROQ_API_KEY=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')
-    export GROQ_API_KEY
-fi
+for key in GROQ_API_KEY YANDEX_DISK_TOKEN; do
+    if [ -z "${!key:-}" ] && [ -f "$ENV_FILE" ]; then
+        value=$(grep -m1 "^${key}=" "$ENV_FILE" | cut -d= -f2- | tr -d '"')
+        export "$key=$value"
+    fi
+done
 
 # A no-op sleep on PATH makes every beat in demolib instant.
 stub=$(mktemp -d -t demostub)

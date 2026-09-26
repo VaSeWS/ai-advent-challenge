@@ -73,6 +73,9 @@ cd "$REPO_ROOT"
 if [ -z "\${GROQ_API_KEY:-}" ] && [ -f "$ENV_FILE" ]; then
     export GROQ_API_KEY=\$(grep -m1 '^GROQ_API_KEY=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')
 fi
+if [ -z "\${YANDEX_DISK_TOKEN:-}" ] && [ -f "$ENV_FILE" ]; then
+    export YANDEX_DISK_TOKEN=\$(grep -m1 '^YANDEX_DISK_TOKEN=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')
+fi
 bash "$DEMO"
 touch "$done_flag"
 LAUNCHER
