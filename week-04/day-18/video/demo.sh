@@ -53,18 +53,18 @@ demo_title "AI Advent Challenge — День 18" "Хотел сделать пр
 demo_note 'Запускаю локальный MCP-сервер с отдельным временным состоянием; заметки читает из подключённого Obsidian Vault.'
 start_server
 
-demo_note 'Создаю расписание для темы Floats с интервалом две секунды.'
-demo_run 'go run ./week-04/day-18 -mode schedule -listen 127.0.0.1:18818 -topic Floats -interval 2s'
+demo_note 'Создаю расписание для темы #Architectural с интервалом две секунды.'
+demo_run "go run ./week-04/day-18 -mode schedule -listen 127.0.0.1:18818 -topic '#Architectural' -interval 2s"
 
 demo_note 'Сервер работает: даю планировщику выполнить несколько тиков и смотрю реальный результат.'
 wait_for_ticks
-demo_run 'go run ./week-04/day-18 -mode summary -listen 127.0.0.1:18818'
+demo_run "go run ./week-04/day-18 -mode summary -listen 127.0.0.1:18818 | sed '1d' | jq '{schedule_count,execution_count,question_count}'"
 demo_pause 2
 
 demo_note 'Останавливаю сервер, не удаляя JSON, затем поднимаю его с тем же состоянием.'
 stop_server
 start_server
 
-demo_note 'После перезапуска проверяю, что расписание и результаты восстановились из JSON.'
-demo_run 'go run ./week-04/day-18 -mode summary -listen 127.0.0.1:18818'
+demo_note 'После перезапуска проверяю агрегированные счётчики расписания, выполнений и вопросов для #Architectural.'
+demo_run "go run ./week-04/day-18 -mode summary -listen 127.0.0.1:18818 | sed '1d' | jq '{schedule_count,execution_count,question_count}'"
 demo_outro 'week-04/day-18'

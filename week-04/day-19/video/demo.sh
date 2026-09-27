@@ -8,12 +8,12 @@ cd "$ROOT"
 
 demo_title "AI Advent — День 19" "MCP-план повторения по темам"
 
-demo_note 'Собираю план по Floats на выбранную дату: три этапа MCP.'
-demo_run 'go run ./week-04/day-19 plan Floats 2026-09-26'
+demo_note 'Проверяю контраст: ищу заметки по хештегу #Floats.'
+demo_run "go run ./week-04/day-19 plan '#Floats' 2026-09-26"
 demo_pause 3
 
-demo_note 'Теперь фильтрую по DB — состав плана меняется.'
-demo_run 'go run ./week-04/day-19 plan DB 2026-09-26'
+demo_note 'Теперь ищу по хештегу #Architectural — план фильтруется именно по указанному тегу.'
+demo_run "go run ./week-04/day-19 plan '#Architectural' 2026-09-26"
 demo_pause 3
 
 demo_note 'Открываю сохранённый результат планирования.'
