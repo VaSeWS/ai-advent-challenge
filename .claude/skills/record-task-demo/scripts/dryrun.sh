@@ -23,7 +23,7 @@ if [ ! -f "$ENV_FILE" ]; then
     [ -n "$common" ] && ENV_FILE="$(dirname "$common")/.env"
 fi
 
-for key in GROQ_API_KEY YANDEX_DISK_TOKEN; do
+for key in GROQ_API_KEY YANDEX_DISK_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
     if [ -z "${!key:-}" ] && [ -f "$ENV_FILE" ]; then
         value=$(grep -m1 "^${key}=" "$ENV_FILE" | cut -d= -f2- | tr -d '"')
         export "$key=$value"

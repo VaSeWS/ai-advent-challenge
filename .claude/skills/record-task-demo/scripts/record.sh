@@ -70,12 +70,12 @@ cat > "$launcher" <<LAUNCHER
 #!/usr/bin/env bash
 set -uo pipefail
 cd "$REPO_ROOT"
-if [ -z "\${GROQ_API_KEY:-}" ] && [ -f "$ENV_FILE" ]; then
-    export GROQ_API_KEY=\$(grep -m1 '^GROQ_API_KEY=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')
-fi
-if [ -z "\${YANDEX_DISK_TOKEN:-}" ] && [ -f "$ENV_FILE" ]; then
-    export YANDEX_DISK_TOKEN=\$(grep -m1 '^YANDEX_DISK_TOKEN=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')
-fi
+for key in GROQ_API_KEY YANDEX_DISK_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
+    if [ -z "\${!key:-}" ] && [ -f "$ENV_FILE" ]; then
+        value=\$(grep -m1 "^\${key}=" "$ENV_FILE" | cut -d= -f2- | tr -d '"')
+        export "\$key=\$value"
+    fi
+done
 bash "$DEMO"
 touch "$done_flag"
 LAUNCHER

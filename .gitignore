@@ -25,3 +25,5 @@ week-*/video/*.mp4
 week-*/video/*.mov
 /week-02/agent.db*
 /week-03/agent.db*
+/week-04/day-18/state.json
+/week-04/day-19/plan.md

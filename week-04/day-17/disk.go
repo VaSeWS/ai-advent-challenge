@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -144,7 +145,16 @@ func (d *diskAPI) upload(ctx context.Context, in uploadInput) (uploadOutput, err
 }
 
 func newDiskAPI(root string) *diskAPI {
-	return &diskAPI{baseURL: diskAPIURL, token: os.Getenv("YANDEX_DISK_TOKEN"), client: &http.Client{Timeout: 2 * time.Minute}, root: root}
+	client := &http.Client{Timeout: 10 * time.Minute}
+	if os.Getenv("YANDEX_DISK_IPV4") == "1" {
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		dialer := &net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}
+		transport.DialContext = func(ctx context.Context, _, address string) (net.Conn, error) {
+			return dialer.DialContext(ctx, "tcp4", address)
+		}
+		client.Transport = transport
+	}
+	return &diskAPI{baseURL: diskAPIURL, token: os.Getenv("YANDEX_DISK_TOKEN"), client: client, root: root}
 }
 
 func registerDiskTool(server *mcp.Server, disk *diskAPI) {

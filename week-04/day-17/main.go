@@ -202,7 +202,7 @@ func main() {
 	if len(os.Args) == 3 {
 		file = os.Args[2]
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Minute)
 	defer cancel()
 	if err := run(ctx, os.Args[1], file); err != nil {
 		log.Fatal(err)
