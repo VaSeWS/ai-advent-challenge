@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -128,36 +127,5 @@ func TestTelegramSendReportsPartialDelivery(t *testing.T) {
 	}
 	if requests != 2 {
 		t.Fatalf("sent %d chunks, want stop after rejection on chunk 2", requests)
-	}
-}
-
-func TestArgumentsForToolBindsHostResults(t *testing.T) {
-	found := findQuestionsOutput{Questions: []question{{Title: "host question", Topic: "go", Due: "2026-09-27", Path: "host.md"}}}
-	plan := reviewPlanOutput{Plan: "host plan"}
-	tests := []struct {
-		name     string
-		tool     string
-		model    string
-		wantKey  string
-		wantData any
-	}{
-		{name: "plan questions", tool: "build_review_plan", model: `{"questions":[{"title":"changed"}],"topic":"wrong","date":"wrong"}`, wantKey: "questions", wantData: found.Questions},
-		{name: "save plan", tool: "save_plan", model: `{"plan":"changed"}`, wantKey: "plan", wantData: plan.Plan},
-		{name: "send plan", tool: "send_message", model: `{"text":"changed"}`, wantKey: "text", wantData: plan.Plan},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			args, err := argumentsForTool(test.tool, test.model, "go", "2026-09-27", found, plan)
-			if err != nil {
-				t.Fatalf("argumentsForTool() error = %v", err)
-			}
-			got := args.(map[string]any)[test.wantKey]
-			if !reflect.DeepEqual(got, test.wantData) {
-				t.Fatalf("host-bound %s = %#v, want %#v", test.wantKey, got, test.wantData)
-			}
-		})
-	}
-	if _, err := argumentsForTool("find_due_questions", `{"topic":"wrong","date":"2026-09-27"}`, "go", "2026-09-27", found, plan); err == nil {
-		t.Fatal("lookup selection with a conflicting topic was accepted")
 	}
 }

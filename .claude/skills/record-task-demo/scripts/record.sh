@@ -12,7 +12,8 @@
 # Recording) and a restart of that app after granting it.
 #
 # Knobs (env): X, Y, W, H (window rect in points), TIMEOUT (seconds to wait
-# for the demo), ENV_FILE (defaults to <repo>/.env).
+# for the demo), ENV_FILE (defaults to <repo>/.env), CAPTURE_WINDOW=1
+# (record the Terminal window even when it is on another Space).
 
 set -euo pipefail
 
@@ -42,6 +43,7 @@ fi
 
 X=${X:-40}; Y=${Y:-60}; W=${W:-1280}; H=${H:-800}
 TIMEOUT=${TIMEOUT:-300}
+CAPTURE_WINDOW=${CAPTURE_WINDOW:-0}
 
 fail() { printf 'error: %s\n' "$1" >&2; exit 1; }
 
@@ -63,6 +65,7 @@ rm -f "$probe"
 work=$(mktemp -d -t taskdemo)
 launcher="$work/launch.sh"
 done_flag="$work/done"
+status_file="$work/exit-status"
 
 # The launcher reads the key itself, so no secret ever reaches the Terminal
 # window, the AppleScript, or this script's arguments.
@@ -77,7 +80,10 @@ for key in GROQ_API_KEY YANDEX_DISK_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; d
     fi
 done
 bash "$DEMO"
+status=\$?
+printf '%s\n' "\$status" > "$status_file"
 touch "$done_flag"
+exit "\$status"
 LAUNCHER
 chmod +x "$launcher"
 
@@ -98,7 +104,15 @@ APPLESCRIPT
 sleep 2
 
 rm -f "$OUT"
-screencapture -v -x -R "$X,$Y,$W,$H" "$OUT" &
+if [ "$CAPTURE_WINDOW" = 1 ]; then
+    window_id=$(osascript -e 'tell application "Terminal" to get id of front window' 2>/dev/null) ||
+        fail "could not get Terminal front window ID"
+    [[ "$window_id" =~ ^[1-9][0-9]*$ ]] ||
+        fail "Terminal returned an invalid front window ID"
+    screencapture -v -x -l "$window_id" "$OUT" &
+else
+    screencapture -v -x -R "$X,$Y,$W,$H" "$OUT" &
+fi
 rec_pid=$!
 
 waited=0
@@ -107,12 +121,26 @@ while [ ! -f "$done_flag" ] && [ "$waited" -lt "$TIMEOUT" ]; do
     waited=$((waited + 1))
 done
 
-sleep 1
 kill -INT "$rec_pid" 2>/dev/null || true
 wait "$rec_pid" 2>/dev/null || true
-rm -rf "$work"
 
-[ -s "$OUT" ] || fail "recording produced no file — check Screen Recording permission"
+[ -s "$OUT" ] || {
+    rm -rf "$work"
+    fail "recording produced no file — check Screen Recording permission"
+}
+[ -f "$status_file" ] || {
+    rm -rf "$work"
+    fail "demo did not report an exit status; failed recording retained at $OUT"
+}
+if ! IFS= read -r demo_status < "$status_file" ||
+    [[ ! "$demo_status" =~ ^[0-9]+$ ]]; then
+    rm -rf "$work"
+    fail "demo reported an invalid exit status; failed recording retained at $OUT"
+fi
+rm -rf "$work"
+[ "$demo_status" -eq 0 ] ||
+    fail "demo exited with status $demo_status; failed recording retained at $OUT"
+
 
 printf 'recorded: %s (%s)\n' "$OUT" "$(du -h "$OUT" | cut -f1)"
 if [ -n "$DAY" ] && [ -n "$WEEK" ]; then

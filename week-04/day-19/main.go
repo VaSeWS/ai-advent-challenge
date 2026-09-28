@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -118,95 +115,6 @@ func registerTools(server *mcp.Server, vault string) {
 	})
 }
 
-func decodeStructured(result *mcp.CallToolResult, target any) error {
-	if result == nil {
-		return errors.New("MCP tool returned no result")
-	}
-	if result.IsError {
-		return errors.New("MCP tool returned an error")
-	}
-	encoded, err := json.Marshal(result.StructuredContent)
-	if err != nil {
-		return fmt.Errorf("encode MCP structured result: %w", err)
-	}
-	if err := json.Unmarshal(encoded, target); err != nil {
-		return fmt.Errorf("decode MCP structured result: %w", err)
-	}
-	return nil
-}
-
-func callTool(ctx context.Context, session *mcp.ClientSession, name string, arguments any, target any) error {
-	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: arguments})
-	if err != nil {
-		return fmt.Errorf("call %s: %w", name, err)
-	}
-	if err := decodeStructured(result, target); err != nil {
-		return fmt.Errorf("read %s result: %w", name, err)
-	}
-	return nil
-}
-
-func printStage(name string, value any) error {
-	encoded, err := json.MarshalIndent(value, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Printf("%s:\n%s\n", name, encoded)
-	return nil
-}
-
-func runPlan(ctx context.Context, topic, date string) error {
-	if _, err := parseDate(date); err != nil {
-		return err
-	}
-	topic = normalizeTopic(topic)
-	executable, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("locate day19 executable: %w", err)
-	}
-	client := mcp.NewClient(&mcp.Implementation{Name: "day19-review-pipeline", Version: "1.0.0"}, nil)
-	session, err := client.Connect(ctx, &mcp.CommandTransport{Command: exec.Command(executable, "server")}, nil)
-	if err != nil {
-		return fmt.Errorf("connect to day19 MCP server: %w", err)
-	}
-	defer session.Close()
-
-	var found findQuestionsOutput
-	if err := callTool(ctx, session, "find_due_questions", map[string]any{"topic": topic, "date": date}, &found); err != nil {
-		return err
-	}
-	if err := printStage("find_due_questions", found); err != nil {
-		return err
-	}
-
-	var built buildPlanOutput
-	if err := callTool(ctx, session, "build_review_plan", map[string]any{
-		"questions": found.Questions, "topic": topic, "date": date,
-	}, &built); err != nil {
-		return err
-	}
-	if err := printStage("build_review_plan", built); err != nil {
-		return err
-	}
-
-	var saved savePlanOutput
-	if err := callTool(ctx, session, "save_plan", map[string]any{"plan": built.Plan}, &saved); err != nil {
-		return err
-	}
-	if err := printStage("save_plan", saved); err != nil {
-		return err
-	}
-	contents, err := os.ReadFile(saved.Path)
-	if err != nil {
-		return fmt.Errorf("read saved plan %q: %w", saved.Path, err)
-	}
-	fmt.Printf("saved content (%s):\n%s", saved.Path, contents)
-	if len(contents) > 0 && contents[len(contents)-1] != '\n' {
-		fmt.Println()
-	}
-	return nil
-}
-
 func vaultPath() (string, error) {
 	vault := os.Getenv("OBSIDIAN_VAULT")
 	if vault == "" {
@@ -239,23 +147,11 @@ func runServer() error {
 	return server.Run(context.Background(), &mcp.StdioTransport{})
 }
 
-func usage() error {
-	return errors.New("usage: go run ./week-04/day-19 server | plan <topic|all> <YYYY-MM-DD>")
-}
-
 func main() {
-	if len(os.Args) == 2 && os.Args[1] == "server" {
-		if err := runServer(); err != nil {
-			log.Fatal(err)
-		}
-		return
+	if len(os.Args) != 2 || os.Args[1] != "server" {
+		log.Fatal("usage: go run ./week-04/day-19 server")
 	}
-	if len(os.Args) != 4 || os.Args[1] != "plan" {
-		log.Fatal(usage())
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	defer cancel()
-	if err := runPlan(ctx, os.Args[2], os.Args[3]); err != nil {
+	if err := runServer(); err != nil {
 		log.Fatal(err)
 	}
 }

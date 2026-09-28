@@ -27,3 +27,5 @@ week-*/video/*.mov
 /week-03/agent.db*
 /week-04/day-18/state.json
 /week-04/day-19/plan.md
+/week-04/agent/agent.db*
+/.omp/task-execute/runs/
