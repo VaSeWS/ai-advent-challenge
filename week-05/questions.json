@@ -1,0 +1,126 @@
+{
+  "snapshot_id": "snapshot-ec91e5a8c85c8f5a8633844d7c58d8f4",
+  "questions": [
+    {
+      "id": "q01",
+      "question": "How do regular and perfect overclocks differ in recipe speed, EU/t and total energy?",
+      "expected_facts": [
+        "A regular overclock doubles recipe speed, doubles total EU consumption, and therefore quadruples EU/t.",
+        "A perfect overclock quadruples recipe speed while keeping total EU consumption unchanged, and therefore quadruples EU/t."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0", "section_id": "section-edab5ff0194600b58b19dce3fb2eaf62"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q02",
+      "question": "How much EU does an LV Combustion Generator draw internally to output one amp, and how much is lost?",
+      "expected_facts": [
+        "The LV Combustion Generator draws 33 EU internally to output one 32-EU amp.",
+        "The conversion loses 1 EU."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0", "section_id": "section-07bc61bc5a15cd359d6aa0a7d6a5ccae"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q03",
+      "question": "What are the override/default/output priorities in an MV EnderIO central ore-processing line?",
+      "expected_facts": [
+        "Priority 0 is used for specific-item overrides that must supersede the normal route.",
+        "Priority -1 is the normal/default processing route.",
+        "Priority -2 is the output route."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-fe50dac3795512ca960af15f17adab16"},
+        {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-75f720225a1761bc0bd73b3d32dee3d0"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q04",
+      "question": "What happens when a Rare Earth macerator buffer fills, and what mitigation does this design mention?",
+      "expected_facts": [
+        "When the Rare Earth macerator buffer fills, items can flow to the next available route and may be misrouted to an ordinary macerator.",
+        "The design mentions using bigger buffers as mitigation, but presents no easy or guaranteed fix; overflow risk remains."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-5a273eae1560c84c35279dea3938e36e"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q05",
+      "question": "If gallium is already automated from essence berries, which basic bauxite route gives twice as much rutile, and what is its sequence?",
+      "expected_facts": [
+        "Route 3 is the basic route to choose when gallium is already automated and twice as much rutile is desired.",
+        "Its sequence is Macerate -> Simple/Normal Wash -> Macerate -> Simple Wash/Centrifuge.",
+        "The route gives 2x more rutile (and therefore 2x more titanium) than Route 2 in the stated circumstance.",
+        "These are basic routes, not the best full bauxite-processing process; chemical bath and/or bauxite slurry may be used for best processing."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-4d9c8912328607f3bd779999b9885f0d"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q06",
+      "question": "What outputs and caveat are listed for chemically processing purified chalcopyrite and tetrahedrite?",
+      "expected_facts": [
+        "Chemically dissolving purified chalcopyrite in a chemical reactor produces platinum concentrate.",
+        "Chemically dissolving purified tetrahedrite in a chemical reactor produces platinum concentrate.",
+        "Neither route produces copper; the platinum concentrate can replace or supplement platinum metallic powder dust in the platline."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-06e4adc1b68adce4ff5c57a1f4041c19"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q07",
+      "question": "What progression gap separates LV solar-panel crafting from LV power use, and why is solar normally supplemental?",
+      "expected_facts": [
+        "Crafting an LV solar panel requires being two tiers higher, at HV.",
+        "Solar panels are not normally a main power source because their crafting tier is two tiers above the panel tier; they are supplemental power, useful for continuous or remote operations."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-709fa05c9dc5e6bdd1e4979266413ad2", "section_id": "section-987313dd8dc4716d75ee58791ab35c82"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q08",
+      "question": "Which destinations are listed for a T4 rocket, and what is the maximum rocket tier for Dense Hydrazine?",
+      "expected_facts": [
+        "A T4 rocket can travel to Io, Mercury, and Venus.",
+        "Dense Hydrazine can fuel rockets up to T4."
+      ],
+      "expected_sources": [
+        {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-58998558f3e1d623d0cbc22eed767275"},
+        {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-7b8cf5acb7a83f9d6fe122e66937a80b"}
+      ],
+      "corpus_sufficient": true
+    },
+    {
+      "id": "q09",
+      "question": "Give the exact NEI quantities, EU/t and duration for sifting purified uraninite.",
+      "expected_facts": [
+        "The corpus does not provide exact NEI quantities, EU/t, or duration for sifting purified uraninite.",
+        "Radium is mentioned in the corpus, but that does not establish the requested recipe quantities, power, or duration; do not invent these values."
+      ],
+      "expected_sources": [],
+      "corpus_sufficient": false
+    },
+    {
+      "id": "q10",
+      "question": "Which installed GTNH modpack version is this entire wiki snapshot guaranteed to match?",
+      "expected_facts": [
+        "The corpus does not identify an installed GTNH modpack version or guarantee that the entire wiki snapshot matches one; do not claim version compatibility."
+      ],
+      "expected_sources": [],
+      "corpus_sufficient": false
+    }
+  ]
+}

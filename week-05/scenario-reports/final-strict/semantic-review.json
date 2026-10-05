@@ -1,0 +1,370 @@
+{
+  "provenance": {
+    "progression": {
+      "report": "week-05/scenario-reports/final-strict/scenario-progression-20261004T214412.361800000Z.json",
+      "sha256": "34be8a3930c11ff628e8ec9042ce1a21a68b476aabe6db182c8cdd8769636ae3"
+    },
+    "ore_processing": {
+      "report": "week-05/scenario-reports/final-strict/scenario-ore-processing-20261004T214606.714306000Z.json",
+      "sha256": "23ac066ddab065b11cb26846075297e3d3eeceeed59b5ad115a95a4a2ea1aa1f"
+    }
+  },
+  "scenario_manual_review_maps": {
+    "progression": {
+      "turn-01": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-02": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-03": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "unsupported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-04": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "partially_compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "incorrect",
+          "constraint_compliance": "partially_compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "incorrect"
+        }
+      ],
+      "turn-05": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "unsupported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "incorrect",
+          "constraint_compliance": "compliant",
+          "semantic_support": "unsupported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-06": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "partially_correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-07": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "partially_correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-08": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "partially_correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-09": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "partially_correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-10": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "incorrect"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-11": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-12": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "partially_compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ]
+    },
+    "ore-processing": {
+      "turn-01": [
+        {
+          "goal_correctness": "partially_correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "partially_correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-02": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-03": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-04": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-05": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "incorrect"
+        }
+      ],
+      "turn-06": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-07": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-08": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-09": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "appropriate"
+        }
+      ],
+      "turn-10": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-11": [
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "not_applicable"
+        }
+      ],
+      "turn-12": [
+        {
+          "goal_correctness": "partial",
+          "constraint_compliance": "compliant",
+          "semantic_support": "partially_supported",
+          "refusal_correctness": "appropriate"
+        },
+        {
+          "goal_correctness": "correct",
+          "constraint_compliance": "compliant",
+          "semantic_support": "supported",
+          "refusal_correctness": "appropriate"
+        }
+      ]
+    }
+  },
+  "factual_notes": {
+    "progression": {
+      "coverage": "Reviewed the two complete reports (12 turns x 2 lanes each; status complete, restart_after 10). Manual state maps assess response against scenario goals/constraints, with memory-state retention separately called out below.",
+      "state_and_history": "Memory=true lane correctly records setup goal, LV and steam power; it updates the tier to MV at turn 4 and HV at turn 10, carries the explicit no-magic constraint, and at turn 10 restores the Moon-trip goal. However turn 4's state still says 'Plan ... at LV' after the user correction; turns 5-9 overwrite the persistent Moon-trip objective with each current factual subquestion (overclock, battery buffer, quest tab, workbench components, fuel loader). Turn 10-12 retains the Moon trip again. No-memory lane has blank task state as configured; don't treat that as memory-system failure.",
+      "retrieval_and_quotes": "Turn 2 and 3 expected progression/safety source sections were not present in either lane's context/citations; the T1/HV table appeared among retrieved material but did not furnish the expected LV progression source. Both turns appropriately disclose limits; turn 3 no-memory lane does provide supported cable danger facts (overvoltage/over-amperage), while memory=true lane gives no substantive safety answer. Turn 5 expected overclock source absent from memory=true context (candidate present only); both honest abstentions. Turn 6 battery-buffer source, turn 7 Space Race quest source, and turn 8 NASA Workbench source are present/cited with exact quotes in both lanes. Turn 9 answers accurately quote the Building Launchpad passage (91 EU/s, loaders, 5 buckets), but expected section metrics are false: source config expects Launch Process and Storage Rockets rather than the actual Building Launchpad passage; classify as report expected-source mapping mismatch, not unsupported prose. Turn 11 memory=true retrieves/cites Rocket Controls exactly; lane 1 gives supported 3x3 pad/fuel-loader details but misses control instructions because Rocket Controls wasn't in context. Turn 12 expected Launch Process section appears in context and is exactly quoted by both lanes for lunar-lander's space-braking, <−20 m/s, sneaking exit, and return cargo.",
+      "defects": "Turn 4 is a simple state update, but memory=true refuses and retains stale LV goal despite updating clarification to MV; no evidence is needed to obey that correction. Turn 10 no-memory lane similarly refuses a simple explicit HV/goal correction; memory=true responds usefully but adds recipe/preparation details beyond the state correction (grounded in the retrieved HV preparation source) and explicitly caveats missing fuel-loader power/full recipes. Turn 12 no-memory lane adds the unrequested constraint 'use only supplied revision-pinned wiki evidence'; it is not a user constraint (no such addition in task state). Memory=true turn 6-9 replaces the parent Moon-trip goal instead of retaining it alongside topic-local questions.",
+      "quality_conclusion": "Conversation memory carries user-provided constraints reliably on many turns and handles explicit corrections at turn 10, but goal retention across unrelated Q&A is materially inconsistent. Retrieval-limited refusals are generally honest and warranted where expected source passages are absent from context, even when corpus_sufficient=true. Do not interpret those as corpus absence; distinguish retrieval failure from insufficient source corpus."
+    },
+    "ore_processing": {
+      "coverage": "Reviewed both complete 12-turn scenario reports (24 turns/lanes total; status complete, restart_after 10).",
+      "state_and_history": "Memory=true preserves MV, central EnderIO line, Rare Earth exclusion, and no-AE2 constraint at turns 1-4; explicit gallium goal correction is recorded at turn 5; the no-mercury chemical-bath constraint is added at turn 8 and retained with the corrected goal; at turn 10 it incorporates essence-berry gallium automation and updates goal to Route 3/twice-rutile; turns 11-12 preserve that. This is strong correction/constraint/history behavior. No-memory lanes leave state blank as configured. At turns 6-9, memory=true continues to state the right goal and constraints while refusing only the evidence-limited current detail.",
+      "source_support": "Turn 2 and turn 3 central-line/priority answers are grounded by exact citations. Turn 3 expected second source section is candidate-only/not in context, but priority source is in context and exact-cited. Turn 4 both answers cite exact bauxite sequence/byproducts; memory lane additionally notes Route 3 is conditional on automated gallium and that simple paths aren't best full processing. Turn 5 relevant Route 2/Route 3 fact is in the corpus but not established in the memory lane's supplied evidence; refusal is retrieval-limited rather than corpus-wide. Turn 6-9 target Macerator Module/Expandable source sections are absent from candidates/context/citations (one Expandable expected section only appears candidate-only for turn 9); answers clearly identify lack of evidence and correctly avoid inventing overflow behavior/mitigation/mercury routes. Turn 10-11 Route 3 facts and priority-0 override are exact quoted; both answers respect all three constraints. Turn 12 the memory lane accurately restates goal/constraints then honestly refuses overflow details because the relevant buffer section isn't retrieved; no-memory answer also lists nearby route facts but can't retain state.",
+      "defects": "At turn 1 the memory=true answer labels the Rutile + Gallium route 'superior for most bases' appropriately, then suggests Route 3 for twice rutile; the extra assertion that dedicated Rare Earth macerators are needed because of 'much higher power load' is beyond the stated source evidence. Mark its semantic support partial, though it complies with exclusion and gives a useful rutile route. Turn 5 memory=true refuses despite the user only asking to update the goal; it does update task state, but refusal is unnecessary and its answer claims route details unavailable even though the relevant route exists elsewhere in the corpus. Turn 12 corpus material about the Rare Earth buffer exists and question is marked corpus_sufficient=true, but it is absent from retrieval context; refusal is appropriately limited to supplied evidence. This is an important retrieval failure, not a source-corpus gap."
+    },
+    "quality_conclusion": "The memory-enabled lane demonstrates correct goal correction, accumulation of constraints, and own-session continuation through restart. Main weakness is retrieval of the Rare Earth overflow/mitigation and replace-machine source material (turns 6-9, 12), where model avoids unsupported answers. The memory-enabled output never recommends AE2 or mercury bath routes after constraints are set; answers consistently keep Rare Earths excluded from ordinary macerators."
+  }
+}

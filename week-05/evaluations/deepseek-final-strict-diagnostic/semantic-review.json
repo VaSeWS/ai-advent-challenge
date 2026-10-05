@@ -1,0 +1,40 @@
+{
+  "source_report": {
+    "path": "week-05/evaluations/deepseek-final-strict-diagnostic/evaluation-20261004T214200.834406000Z.json",
+    "sha256": "c0da6599776fbce7c1db1c110ba922e0c9dac24aa21fa816c8325ce3d823124f",
+    "status": "complete",
+    "comparisons": 50,
+    "lanes": 100,
+    "snapshot_id": "snapshot-ec91e5a8c85c8f5a8633844d7c58d8f4",
+    "reviewer": "QA agent (automated assignment; not a human review)"
+  },
+  "review_scope": "Grounded-pair excerpt from the complete independent review artifact at .omp/task-execute/runs/week05-rag-agent-20261004/evidence/control-semantic-review.json. The source artifact assesses all 50 comparison keys and 100 lanes; this copy includes only the 10 rag-grounded rows needed for the day-24 report display.",
+  "manual_review_map": {
+    "rag-grounded/q01": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q02": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q03": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q04": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q05": [{"correctness":"partially_correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"partially_correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q06": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q07": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q08": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"not_applicable"}],
+    "rag-grounded/q09": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"appropriate"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"appropriate"}],
+    "rag-grounded/q10": [{"correctness":"correct","semantic_support":"supported","refusal_correctness":"appropriate"},{"correctness":"correct","semantic_support":"supported","refusal_correctness":"appropriate"}]
+  },
+  "source_and_quality_assessment": {
+    "q01": {"source_presence":"Expected overclock source present in RAG context/citation for all four RAG configurations; baseline no-rag lane has no source, as expected.","quote_presence_exactness":"RAG citations include exact overclock passage; no-rag has no quote.","semantic_review":"All RAG answers correctly distinguish regular 2x speed/2x total EU/4x EU/t from perfect 4x speed/unchanged total EU/4x EU/t. Baseline knowledge-only answer misstates perfect-overclock duration."},
+    "q02": {"source_presence":"RAG lanes include the Electricity output-loss source.","quote_presence_exactness":"RAG exact quotes support 33 EU input, 32 EU output, 1 EU loss.","semantic_review":"RAG grounded answers correctly answer the output-loss question; a reported 3.0303% lost/input fraction is arithmetically consistent."},
+    "q03": {"source_presence":"RAG lanes retrieve/cite the two expected Ore Processing Concepts sections.","quote_presence_exactness":"Citation quotes are exact to the relevant source sections.","semantic_review":"Supported priorities are 0 override; -1 type-filter default route; -2 output route."},
+    "q04": {"source_presence":"Expected Rare Earth buffer section present and cited in RAG lanes.","quote_presence_exactness":"RAG quotes are exact; fixed structural lane 1 misses a specific misrouting claim.","semantic_review":"Grounded RAG answers include the overflow outcome and mitigation; fixed lane 1 is only partial."},
+    "q05": {"source_presence":"Route source retrieved and cited in RAG lanes.","quote_presence_exactness":"RAG citation passages support Route 3 and processing sequence.","semantic_review":"All answer lanes identify Route 3 and sequence but omit that these are basic routes rather than the best full process; marked partial."},
+    "q06": {"source_presence":"Expected reactor/platinum concentrate source retrieved and cited in RAG lanes.","quote_presence_exactness":"Answering RAG lanes cite exact source evidence.","semantic_review":"Grounded answers state both platinum-concentrate outputs and the no-copper caveat."},
+    "q07": {"source_presence":"Solar-panel progression source retrieved/cited in RAG lanes.","quote_presence_exactness":"RAG evidence is exact to the two-tier crafting requirement and solar role.","semantic_review":"RAG responses accurately give the LV-to-HV crafting gap and supplemental role."},
+    "q08": {"source_presence":"Expected sections cover T4 destinations and Dense Hydrazine cap.","quote_presence_exactness":"Citations are exact where present.","semantic_review":"Grounded lanes correctly list Io, Mercury, Venus and T4 maximum; filtered-rewritten lane 2 is incomplete, but outside this day-24 grounded-pair excerpt."},
+    "q09": {"source_presence":"No expected source by design: corpus_sufficient=false and expected_sources empty.","quote_presence_exactness":"No citations; answers avoid unsupported recipe values.","semantic_review":"All grounded lanes correctly refuse to invent NEI quantities, EU/t, or duration."},
+    "q10": {"source_presence":"No expected source by design; the corpus does not establish a whole-snapshot installed-version guarantee.","quote_presence_exactness":"No citations; answers avoid unsupported version assertions.","semantic_review":"Grounded lanes correctly state that no installed modpack version or full-snapshot compatibility guarantee is established."}
+  },
+  "aggregate": {
+    "manual_assessment":"In this selected rag-grounded lane pair, q01-q04 and q06-q10 are assessed correct/supported; q05 is supported but partial because the expected basic-versus-best-route caveat is omitted. This excerpt is not a universal superiority claim.",
+    "method_and_limit":"The assessment is agent-authored, grounded in the exact saved report and corpus evidence, and must not be represented as a human review or applied to new live TUI results."
+  }
+}

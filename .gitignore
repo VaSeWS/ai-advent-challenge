@@ -29,3 +29,9 @@ week-*/video/*.mov
 /week-04/day-19/plan.md
 /week-04/agent/agent.db*
 /.omp/task-execute/runs/
+/week-05/*.db
+/week-05/*.db-wal
+/week-05/*.db-shm
+/week-05/video/*.mp4
+/week-05/video/*.mov
+

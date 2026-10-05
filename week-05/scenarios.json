@@ -1,0 +1,228 @@
+{
+  "snapshot_id": "snapshot-ec91e5a8c85c8f5a8633844d7c58d8f4",
+  "scenarios": [
+    {
+      "id": "progression",
+      "theme": "Progression to a first Moon trip",
+      "restart_after": 10,
+      "turns": [
+        {
+          "question": "I am at LV and want my first Moon trip. Avoid magic-based routes.",
+          "expected_goal": "Plan a first Moon trip.",
+          "expected_constraints": ["Avoid magic-based routes."],
+          "expected_sources": [],
+          "corpus_sufficient": false
+        },
+        {
+          "question": "I currently have steam power. Which electrical stages separate me from a T1 rocket?",
+          "expected_goal": "Identify electrical progression from steam power to the T1 Moon rocket.",
+          "expected_constraints": ["Current stage was stated as LV at scenario setup."],
+          "expected_sources": [
+            {"document_id": "doc-626c925b618145e4e43655f7673b36b4", "section_id": "section-102ed1f94bfe17fba2d21da7810f25a0"},
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-58998558f3e1d623d0cbc22eed767275"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "What unsafe power connections should I avoid while progressing?",
+          "expected_goal": "Identify unsafe electrical connections to avoid during progression.",
+          "expected_constraints": ["Avoid magic-based routes."],
+          "expected_sources": [
+            {"document_id": "doc-626c925b618145e4e43655f7673b36b4", "section_id": "section-98c5c31c5fb95e1bdb7ad90e3106b7d5"},
+            {"document_id": "doc-626c925b618145e4e43655f7673b36b4", "section_id": "section-97f36ea61c062aff34a1e37ddf7c0280"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Correction: I have reached MV. Update my current stage.",
+          "expected_goal": "Keep the first Moon trip as the goal.",
+          "expected_constraints": ["Current stage is MV, replacing LV."],
+          "expected_sources": [],
+          "corpus_sufficient": false
+        },
+        {
+          "question": "Explain the energy tradeoff of regular overclocking.",
+          "expected_goal": "Explain regular-overclocking speed, EU/t, and total-energy tradeoffs.",
+          "expected_constraints": ["Current stage is MV."],
+          "expected_sources": [
+            {"document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0", "section_id": "section-edab5ff0194600b58b19dce3fb2eaf62"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "How do battery buffers draw and output amps?",
+          "expected_goal": "Explain battery-buffer input and output amperage behavior.",
+          "expected_constraints": ["Current stage is MV."],
+          "expected_sources": [
+            {"document_id": "doc-626c925b618145e4e43655f7673b36b4", "section_id": "section-a3b909701609c45c820fa617118d0272"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Which quests unlock the Space Race quest tab?",
+          "expected_goal": "Identify the quests associated with unlocking the Space Race quest tab.",
+          "expected_constraints": ["Current stage is MV."],
+          "expected_sources": [
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-72e925ffcade57b3c91506ed86d54dcd"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Which notable components does the wiki list for the NASA Workbench?",
+          "expected_goal": "List notable NASA Workbench components identified by the wiki.",
+          "expected_constraints": ["Current stage is MV."],
+          "expected_sources": [
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-93f20fe71e8f8e91ceedc9b1527c3148"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "What does the Galacticraft Fuel Loader need, and how much fuel can a T1 rocket hold?",
+          "expected_goal": "Identify Fuel Loader requirements and T1 rocket fuel capacity.",
+          "expected_constraints": ["Current stage is MV."],
+          "expected_sources": [
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-52005545f1cd5b04c57894c32ca17213"},
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-5ed651b308887b66114e1c7cc5afd6db"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Correction: I am now at HV. Keep the first Moon trip as my goal.",
+          "expected_goal": "Keep the first Moon trip as the goal.",
+          "expected_constraints": ["Current stage is HV, replacing MV."],
+          "expected_sources": [],
+          "corpus_sufficient": false
+        },
+        {
+          "question": "What launchpad arrangement and launch controls do I need?",
+          "expected_goal": "Identify launchpad arrangement and rocket launch controls for the Moon trip.",
+          "expected_constraints": ["Current stage is HV.", "Avoid magic-based routes."],
+          "expected_sources": [
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-54ab8ab4f75eb704ee5ecdbb1d801092"},
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-d61e44ef5d83d41efbea5db5b12c4bec"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Restate my current stage, goal and constraints, then explain safe Moon landing controls.",
+          "expected_goal": "Retain the first Moon trip as the goal and explain safe Moon landing controls.",
+          "expected_constraints": ["Current stage is HV.", "Avoid magic-based routes."],
+          "expected_sources": [
+            {"document_id": "doc-0b20024c57c212406bf68b660f2eaf30", "section_id": "section-52005545f1cd5b04c57894c32ca17213"}
+          ],
+          "corpus_sufficient": true
+        }
+      ]
+    },
+    {
+      "id": "ore-processing",
+      "theme": "MV central ore-processing line with corrected priorities",
+      "restart_after": 10,
+      "turns": [
+        {
+          "question": "I am at MV designing an EnderIO central ore-processing line. My goal is rutile, and Rare Earths must not enter ordinary macerators.",
+          "expected_goal": "Design an MV EnderIO central ore-processing line prioritizing rutile.",
+          "expected_constraints": ["Rare Earths must not enter ordinary macerators."],
+          "expected_sources": [],
+          "corpus_sufficient": false
+        },
+        {
+          "question": "Do not recommend AE2 yet. Explain the modular central-line design.",
+          "expected_goal": "Explain the modular MV EnderIO central-line design.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-fe50dac3795512ca960af15f17adab16"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Which priorities should override, default and output routes use?",
+          "expected_goal": "Identify override, default, and output priorities for the central line.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-fe50dac3795512ca960af15f17adab16"},
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-75f720225a1761bc0bd73b3d32dee3d0"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "What are the basic bauxite routes and their byproducts?",
+          "expected_goal": "List the basic bauxite routes and their byproducts.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-4d9c8912328607f3bd779999b9885f0d"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Correction: my priority is gallium rather than rutile. Update the goal.",
+          "expected_goal": "Prioritize gallium instead of rutile.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators."],
+          "expected_sources": [],
+          "corpus_sufficient": false
+        },
+        {
+          "question": "What happens if the Rare Earth buffer fills?",
+          "expected_goal": "Explain the overflow behavior when a Rare Earth buffer fills.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-5a273eae1560c84c35279dea3938e36e"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "What buffer mitigation is actually mentioned by this design?",
+          "expected_goal": "Identify the mentioned buffer mitigation without presenting it as a guaranteed fix.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-5a273eae1560c84c35279dea3938e36e"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Add a constraint: do not use mercury chemical-bath routes.",
+          "expected_goal": "Continue planning the ore-processing line for the current gallium goal.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators.", "Do not use mercury chemical-bath routes."],
+          "expected_sources": [],
+          "corpus_sufficient": false
+        },
+        {
+          "question": "Which design characteristics help replace machines without redesigning the whole line?",
+          "expected_goal": "Identify central-line design characteristics that permit machine replacement without whole-line redesign.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators.", "Do not use mercury chemical-bath routes."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-3b02f2023697ac4c6499c2d1b725429c"},
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-3d86424fbf1e51a94f9c709b8f0d3241"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Correction: gallium is already automated from essence berries; prioritize twice as much rutile now.",
+          "expected_goal": "Prioritize twice as much rutile; gallium is already automated from essence berries.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators.", "Do not use mercury chemical-bath routes."],
+          "expected_sources": [],
+          "corpus_sufficient": false
+        },
+        {
+          "question": "Which basic bauxite route fits my updated goal, and which filters override normal routing?",
+          "expected_goal": "Select the basic bauxite route that yields twice as much rutile when gallium is already automated, and identify filters overriding normal routing.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators.", "Do not use mercury chemical-bath routes."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-4d9c8912328607f3bd779999b9885f0d"},
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-75f720225a1761bc0bd73b3d32dee3d0"}
+          ],
+          "corpus_sufficient": true
+        },
+        {
+          "question": "Restate my current goal and constraints, and explain the remaining overflow risk without inventing a guaranteed fix.",
+          "expected_goal": "Retain the twice-as-much-rutile goal, note gallium automation, and explain the remaining Rare Earth overflow risk without claiming a guaranteed remedy.",
+          "expected_constraints": ["Do not recommend AE2 yet.", "Rare Earths must not enter ordinary macerators.", "Do not use mercury chemical-bath routes."],
+          "expected_sources": [
+            {"document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b", "section_id": "section-5a273eae1560c84c35279dea3938e36e"}
+          ],
+          "corpus_sufficient": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: record-task-demo
-description: Record a silent screencast demo of a day's task in this repo (week-NN/day-NN) — plan the shots, get the plan approved, write a self-typing terminal demo, dry-run it, capture the screen with the macOS screencapture, upload the .mp4 to Yandex.Disk, commit and push the demo script, and report "Код: <github link> / Видео: <yandex link>". Use this skill whenever the user asks for a video, demo, screencast, recording, GIF or "покажи, как работает" for a task — including phrasings like "сделай видео для дня 3", "запиши демо", "надо показать задание" — even if they never say the word "skill" or name a tool.
+description: Record a silent screencast demo of a day's task in this repo (week-NN/day-NN) — plan the shots, get the plan approved, write a self-typing terminal demo, dry-run it, capture its Terminal window with macOS ScreenCaptureKit, upload the .mp4 to Yandex.Disk, commit and push the demo script, and report "Код: <github link> / Видео: <yandex link>". Use this skill whenever the user asks for a video, demo, screencast, recording, GIF or "покажи, как работает" for a task — including phrasings like "сделай видео для дня 3", "запиши демо", "надо показать задание" — even if they never say the word "skill" or name a tool.
 ---
 
 # Record a task demo
@@ -87,10 +87,17 @@ find here than in a take. Fix and repeat until it is clean.
 .claude/skills/record-task-demo/scripts/record.sh week-NN/day-NN/video/demo.sh
 ```
 
-It checks the Screen Recording permission, opens a 1280×800 Terminal window,
-plays the demo, captures that rect and stops when the demo ends. It prints
-the output path and the matching Yandex.Disk path. Tell the user not to touch
-the screen while it runs.
+It checks the Screen Recording permission, opens a dedicated 1280×800
+Terminal window and captures that exact window with ScreenCaptureKit
+(macOS 15+ and Xcode Command Line Tools). With this default backend, the demo
+starts only after the recorder is ready, and other windows or Spaces do not
+enter the recording.
+It stops when the demo ends and prints the output and Yandex.Disk paths.
+Tell the user not to close or resize the demo window while it runs.
+`DEMO_TERMINAL_PROFILE` optionally selects an existing Terminal profile.
+`CAPTURE_WINDOW=0` explicitly selects legacy screen-rectangle capture with
+`screencapture`; it has no readiness signal. In that mode, do not touch the
+screen during recording.
 
 If the permission is missing the script says so and does nothing else: the
 user has to enable their terminal app in System Settings > Privacy & Security
@@ -158,7 +165,7 @@ before printing this block — don't guess it.
 
 ## Key safety
 
-`GROQ_API_KEY` and `YANDEX_DISK_TOKEN` must never appear in a frame. The
+`GROQ_API_KEY`, `DEEPSEEK_API_KEY` and `YANDEX_DISK_TOKEN` must never appear in a frame. The
 keys live in `.env` and `record.sh` passes them through a temporary launcher,
 so neither reaches the Terminal window, the AppleScript, or a process
 argument. When the demo needs to show that a key is being used, type a
@@ -179,7 +186,8 @@ Never `echo` the variable, never `env | grep`, never `cat .env`.
 └── scripts/
     ├── demolib.sh               typing effect, prompt, shot helpers
     ├── dryrun.sh                instant replay of a demo, real commands
-    ├── record.sh                Terminal window + screencapture → .mp4
+    ├── record.sh                owned Terminal window + recording lifecycle
+    ├── record-window.swift      desktop-independent ScreenCaptureKit → .mp4
     └── upload_yadisk.sh         local MCP client invocation + public link
 ```
 
@@ -195,5 +203,5 @@ day's `video/`); only the demo script is committed.
   add `-max-tokens` where the day supports it.
 - **Recording longer than the demo** — `record.sh` stops one second after the
   demo exits; a hung command is the usual cause, check with `dryrun.sh`.
-- **Mouse pointer in frame** — move the pointer out of the capture rect
-  before recording; `screencapture` always draws the cursor.
+- **Mouse pointer in frame** — the default window recorder hides it. In
+  legacy rectangle mode, move the pointer outside the capture rect.

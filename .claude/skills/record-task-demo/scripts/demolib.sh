@@ -19,7 +19,7 @@ PROMPT_LABEL=${PROMPT_LABEL:-'~/DevProjects/ai-advent-challenge'}
 DEMO_BOLD=$'\033[1m'; DEMO_DIM=$'\033[2m'; DEMO_RESET=$'\033[0m'
 DEMO_GREEN=$'\033[32m'; DEMO_BLUE=$'\033[34m'; DEMO_RED=$'\033[31m'; DEMO_CYAN=$'\033[36m'
 
-demo_nap() { [ "$1" != "0" ] && sleep "$1"; }
+demo_nap() { if [ "$1" != "0" ]; then sleep "$1"; fi; }
 
 # Print a string one character at a time, then a newline.
 demo_typewrite() {
@@ -111,9 +111,11 @@ demo_repo_root() {
 #   demo_tui_watch   # attaches when recording (real tty), else runs headless
 #   demo_tui_stop
 #
-# Requires tmux. Session name is $TUI_SESSION (default: demo-tui).
+# Requires tmux. Each invocation uses its own private socket and session.
 
-TUI_SESSION=${TUI_SESSION:-demo-tui}
+TUI_TMUX_DIR=
+TUI_TMUX_SOCKET=
+TUI_SESSION=${TUI_SESSION:-"demo-${UID:-user}-$$-${RANDOM}"}
 
 demo_tui_require() {
     command -v tmux >/dev/null 2>&1 || {
@@ -124,11 +126,14 @@ demo_tui_require() {
 }
 
 # Start the program detached inside a tmux session.
+demo_tmux() { tmux -S "$TUI_TMUX_SOCKET" "$@"; }
+
 demo_tui_start() {
     local cmd=$1 cols=${2:-100} rows=${3:-30}
     demo_tui_require
-    tmux kill-session -t "$TUI_SESSION" 2>/dev/null || true
-    tmux new-session -d -s "$TUI_SESSION" -x "$cols" -y "$rows" "$cmd"
+    TUI_TMUX_DIR=$(mktemp -d "${TMPDIR:-/tmp}/taskdemo-tmux.XXXXXX")
+    TUI_TMUX_SOCKET="$TUI_TMUX_DIR/server.sock"
+    demo_tmux new-session -d -s "$TUI_SESSION" -x "$cols" -y "$rows" "$cmd"
 }
 
 # Type text into the running TUI, one character at a time (visible typing).
@@ -136,14 +141,14 @@ demo_tui_type() {
     local text=$1 i ch
     for ((i = 0; i < ${#text}; i++)); do
         ch=${text:i:1}
-        tmux send-keys -t "$TUI_SESSION" -l -- "$ch" 2>/dev/null || true
+        demo_tmux send-keys -t "$TUI_SESSION" -l -- "$ch" 2>/dev/null || true
         demo_nap "$SPEED"
     done
 }
 
 # Send a named key (Enter, C-c, PageUp, PageDown, ...) to the TUI.
 demo_tui_key() {
-    tmux send-keys -t "$TUI_SESSION" "$1" 2>/dev/null || true
+    demo_tmux send-keys -t "$TUI_SESSION" "$1" 2>/dev/null || true
 }
 
 # Insert a whole block of text in one shot (no per-character typing effect) —
@@ -164,9 +169,9 @@ demo_tui_paste() {
     local text=$1 file
     file=$(mktemp -t demo-tui-paste)
     printf '%s' "$text" > "$file"
-    tmux load-buffer -b demo_tui_paste "$file" 2>/dev/null || true
-    tmux paste-buffer -p -t "$TUI_SESSION" -b demo_tui_paste 2>/dev/null || true
-    tmux delete-buffer -b demo_tui_paste 2>/dev/null || true
+    demo_tmux load-buffer -b demo_tui_paste "$file" 2>/dev/null || true
+    demo_tmux paste-buffer -p -t "$TUI_SESSION" -b demo_tui_paste 2>/dev/null || true
+    demo_tmux delete-buffer -b demo_tui_paste 2>/dev/null || true
     rm -f "$file"
 }
 
@@ -176,7 +181,7 @@ demo_tui_paste() {
 # then call demo_tui_watch again to reattach. No-op if nothing is attached
 # (e.g. during a headless dry run).
 demo_tui_detach() {
-    tmux detach-client -s "$TUI_SESSION" 2>/dev/null || true
+    demo_tmux detach-client -s "$TUI_SESSION" 2>/dev/null || true
 }
 
 # Block until the visible pane stops changing for `stable_for` seconds (the
@@ -190,7 +195,7 @@ demo_tui_wait_for() {
     local pattern=$1 timeout=${2:-20} start now
     start=$(date +%s)
     while true; do
-        tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null | grep -qF "$pattern" && return 0
+        demo_tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null | grep -qF "$pattern" && return 0
         now=$(date +%s)
         [ $((now - start)) -ge "$timeout" ] && return 1
         /bin/sleep 0.2 2>/dev/null || true
@@ -201,7 +206,7 @@ demo_tui_wait_stable() {
     local timeout=${1:-20} stable_for=${2:-1} start now prev cur last_change
     start=$(date +%s); last_change=$start; prev=$'\x01'
     while true; do
-        cur=$(tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null || true)
+        cur=$(demo_tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null || true)
         now=$(date +%s)
         if [ "$cur" != "$prev" ]; then prev=$cur; last_change=$now; fi
         [ $((now - last_change)) -ge "$stable_for" ] && return 0
@@ -216,13 +221,18 @@ demo_tui_wait_stable() {
 # and print the final pane content for inspection.
 demo_tui_watch() {
     if [ -t 1 ] && [ -t 0 ]; then
-        tmux attach -t "$TUI_SESSION"
+        demo_tmux attach -t "$TUI_SESSION"
     else
-        wait 2>/dev/null || true
-        tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null || true
+        if [ $# -gt 0 ]; then wait "$1"; else wait; fi
+        demo_tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null || true
     fi
 }
 
 demo_tui_stop() {
-    tmux kill-session -t "$TUI_SESSION" 2>/dev/null || true
+    if [ -n "$TUI_TMUX_SOCKET" ]; then
+        demo_tmux kill-server 2>/dev/null || true
+        rm -rf "$TUI_TMUX_DIR"
+        TUI_TMUX_DIR=
+        TUI_TMUX_SOCKET=
+    fi
 }

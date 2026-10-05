@@ -1,0 +1,669 @@
+{
+  "source_report": {
+    "path": "week-05/evaluations/deepseek-final-strict-diagnostic/evaluation-20261004T214200.834406000Z.json",
+    "sha256": "c0da6599776fbce7c1db1c110ba922e0c9dac24aa21fa816c8325ce3d823124f",
+    "status": "complete",
+    "comparisons": 50,
+    "lanes": 100,
+    "snapshot_id": "snapshot-ec91e5a8c85c8f5a8633844d7c58d8f4",
+    "reviewer": "QA agent (automated assignment; not a human review)"
+  },
+  "manual_review_map": {
+    "baseline-rag/q01": [
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q01": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q01": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q01": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-grounded/q01": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q02": [
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q02": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q02": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q02": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-grounded/q02": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q03": [
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q03": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q03": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q03": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-grounded/q03": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q04": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q04": [
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "partially_supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q04": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q04": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-grounded/q04": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q05": [
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q05": [
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q05": [
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q05": [
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-grounded/q05": [
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q06": [
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q06": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q06": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q06": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "incorrect"
+      }
+    ],
+    "rag-grounded/q06": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q07": [
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q07": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q07": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q07": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-grounded/q07": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q08": [
+      {
+        "correctness": "incorrect",
+        "semantic_support": "unsupported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "fixed-structural/q08": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "rag-filtered/q08": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "filtered-rewritten/q08": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "partially_correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "incorrect"
+      }
+    ],
+    "rag-grounded/q08": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "not_applicable"
+      }
+    ],
+    "baseline-rag/q09": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "fixed-structural/q09": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "rag-filtered/q09": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "filtered-rewritten/q09": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "rag-grounded/q09": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "baseline-rag/q10": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "fixed-structural/q10": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "rag-filtered/q10": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "filtered-rewritten/q10": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ],
+    "rag-grounded/q10": [
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      },
+      {
+        "correctness": "correct",
+        "semantic_support": "supported",
+        "refusal_correctness": "appropriate"
+      }
+    ]
+  },
+  "source_and_quality_assessment": {
+    "q01": {
+      "source_presence": "Expected overclock source present in RAG context/citation for all four RAG configurations; baseline no-rag lane has no source, as expected.",
+      "quote_presence_exactness": "RAG citations include exact overclock passage; no-rag has no quote.",
+      "semantic_review": "All RAG answers correctly distinguish regular 2x speed/2x total EU/4x EU/t from perfect 4x speed/unchanged total EU/4x EU/t. Baseline no-rag answer misstates perfect-overclock duration as half duration (source says quadruple recipe speed); also claims regular 4x EU/t and half-duration, but its regular total energy claim is correct."
+    },
+    "q02": {
+      "source_presence": "RAG lanes include the Electricity output-loss source; no-rag baseline lane does not.",
+      "quote_presence_exactness": "RAG exact quotes support 33 EU input, 32 EU output, 1 EU loss.",
+      "semantic_review": "No-rag lane invents 40 EU/t fuel-equivalent input and 8 EU/t loss, conflicting with the asked internal-buffer figure. RAG lanes answer correctly; the extra 3.0303% in one answer is the lost/input fraction and is arithmetically consistent."
+    },
+    "q03": {
+      "source_presence": "RAG lanes retrieve/cite the two expected Ore Processing Concepts sections for override/default/output routing.",
+      "quote_presence_exactness": "Citation quotes exact to the relevant source sections in the RAG answers.",
+      "semantic_review": "No-rag answer substitutes generic Override/Default slots and fails to give the design's numerical priorities. Supported answer: 0 override; -1 type-filter default route; -2 output route."
+    },
+    "q04": {
+      "source_presence": "Expected Rare Earth buffer section present and cited in RAG lanes; baseline no-rag has no source.",
+      "quote_presence_exactness": "RAG quotes are exact. The fixed structural lane 1 does cite buffer/overflow discussion, but does not ground the specific misrouting claim it omits.",
+      "semantic_review": "Baseline no-rag correctly abstains because no source was supplied. Fixed lane 1 gives only broad buffer failure and adding more chests; it misses the question's key outcome (overflow items may pass to ordinary macerators) and specified mitigation (bigger buffers, no guaranteed fix), thus partial. Remaining RAG answers state both."
+    },
+    "q05": {
+      "source_presence": "Route source retrieved and cited in RAG lanes; baseline no-rag lane has none.",
+      "quote_presence_exactness": "RAG citation passages support Route 3 and processing sequence.",
+      "semantic_review": "Baseline no-rag fabricates a sodium-aluminate/gallium-hydroxide route, not the stated Route 3 sequence. Other lanes correctly identify Route 3 and sequence, but omit the expected limiting caveat that these are basic routes rather than the best full process (which may use chemical bath and/or bauxite slurry); marked partial rather than fully complete."
+    },
+    "q06": {
+      "source_presence": "Expected chemical reactor/platinum concentrate source retrieved and cited in RAG lanes, including the lane that abstains despite source availability elsewhere.",
+      "quote_presence_exactness": "Answering RAG lanes cite exact source evidence; abstaining lane has no citations.",
+      "semantic_review": "No-rag answer invents conventional copper/iron/antimony/sulfur outputs, misses both platinum-concentrate outputs and the no-copper caveat. Valid RAG answers give the key result and caveat. filtered-rewritten lane 2 abstains although this comparison's corpus/source supports the answer; mark its refusal incorrect."
+    },
+    "q07": {
+      "source_presence": "Solar-panel progression source retrieved/cited in RAG lanes; baseline no-rag lane has no source.",
+      "quote_presence_exactness": "RAG evidence is exact to the two-tier crafting requirement and solar role.",
+      "semantic_review": "No-rag response adds unsupported low output/daylight/weather/material assertions and misses HV as the two-tier gate. RAG responses accurately give the LV-to-HV crafting gap and supplemental role."
+    },
+    "q08": {
+      "source_presence": "The two expected sections cover T4 destinations and Dense Hydrazine cap; RAG answers generally cite those sections. filtered-rewritten lane 2 retrieves only support for fuel cap, not the destination source.",
+      "quote_presence_exactness": "Citations are exact where present; filtered-rewritten lane 2 does not support destinations and says supplied evidence omits them.",
+      "semantic_review": "Baseline no-rag gives incorrect destinations (Moon, Mars, Asteroids) though T4 fuel cap is right. Other answer lanes correctly list Io, Mercury, Venus and T4 maximum, apart from filtered-rewritten lane 2's incomplete destination refusal, assessed as a failure against a sufficient-corpus question."
+    },
+    "q09": {
+      "source_presence": "No expected source by design: corpus_sufficient=false, expected_sources empty.",
+      "quote_presence_exactness": "No citations; answers consistently avoid unsupported recipe values.",
+      "semantic_review": "All 10 lanes correctly refuse to invent NEI quantities, EU/t, or duration; some mention nearby radium evidence without treating it as recipe proof."
+    },
+    "q10": {
+      "source_presence": "No expected source by design: corpus_sufficient=false, expected_sources empty. Corpus provenance indicates revision-pinned articles, not a whole-snapshot installed-version guarantee.",
+      "quote_presence_exactness": "No citations; answers consistently make no unsupported version assertion.",
+      "semantic_review": "All 10 lanes correctly state that no installed modpack version or full-snapshot compatibility guarantee is established. A specific Ore Processing Concepts page refers to a particular 2.1.2.0 design, not the whole snapshot."
+    }
+  },
+  "aggregate": {
+    "manual_assessment": "All 50 comparison keys and 100 lanes represented. Correctness is strong on grounded RAG lanes, with concrete shortcomings recorded above; q05 responses are partial because they miss the explicitly expected basic-versus-best-route caveat. Strict refusals are appropriate for q09/q10 and baseline no-context q04, but two evidence-insufficient answers are not accepted as correct because their questions are corpus-sufficient and the relevant expected material exists: filtered-rewritten/q06 lane 2 and filtered-rewritten/q08 lane 2. Baseline knowledge-only answers hallucinate or misstate q01, q02, q03, q05, q06, q07, and q08.",
+    "method_and_limit": "Source/quote flags are based on report evidence and cited quotes, while semantic judgments compare full answers with the actual control expectations and relevant corpus sections. Boolean exact-substring facts alone do not determine semantic correctness. RAG has clear improvements on source-grounded questions here, but no universal superiority claim is made; there are retrieval-coverage/refusal failures and omissions."
+  }
+}

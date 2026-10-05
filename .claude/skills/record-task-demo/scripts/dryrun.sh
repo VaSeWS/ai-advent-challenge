@@ -23,7 +23,7 @@ if [ ! -f "$ENV_FILE" ]; then
     [ -n "$common" ] && ENV_FILE="$(dirname "$common")/.env"
 fi
 
-for key in GROQ_API_KEY YANDEX_DISK_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
+for key in GROQ_API_KEY DEEPSEEK_API_KEY YANDEX_DISK_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
     if [ -z "${!key:-}" ] && [ -f "$ENV_FILE" ]; then
         value=$(grep -m1 "^${key}=" "$ENV_FILE" | cut -d= -f2- | tr -d '"')
         export "$key=$value"
@@ -35,8 +35,7 @@ stub=$(mktemp -d -t demostub)
 printf '#!/bin/sh\nexit 0\n' > "$stub/sleep"
 chmod +x "$stub/sleep"
 
-cd "$REPO_ROOT"
-PATH="$stub:$PATH" SPEED=0 PAUSE=0 bash "$DEMO"
+DEMO_DRY_RUN=1 PATH="$stub:$PATH" SPEED=0 PAUSE=0 bash "$DEMO"
 rc=$?
 
 rm -rf "$stub"

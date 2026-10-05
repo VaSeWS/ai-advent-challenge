@@ -1,0 +1,583 @@
+{
+  "created_at": "2026-10-04T17:33:25Z",
+  "build": {
+    "ID": "3334022d-8fa3-4883-a5d9-4b34c0c95360",
+    "SnapshotID": "snapshot-ec91e5a8c85c8f5a8633844d7c58d8f4",
+    "Fingerprint": {
+      "Model": "nomic-embed-text:latest",
+      "Digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+      "Preparation": "search_document:/search_query: v1",
+      "Dimensions": 768
+    },
+    "Config": {
+      "size": 400,
+      "overlap": 80
+    }
+  },
+  "strategy": "structural",
+  "candidate_k": 10,
+  "context_k": 3,
+  "threshold": 0.6,
+  "calibrated": true,
+  "calibration": "week-05/calibration.json",
+  "examples": [
+    {
+      "id": "q01",
+      "query": "How do regular and perfect overclocks differ in recipe speed, EU/t and total energy?",
+      "relevant": true,
+      "candidates": [
+        {
+          "chunk_id": "chunk-5e57a74464432107837c03099bfbc7b6",
+          "document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0",
+          "section_paths": [
+            "Electricity > Overclocking"
+          ],
+          "similarity": 0.8159657716751099
+        },
+        {
+          "chunk_id": "chunk-542935792c1f0cfaa3b3c690a0233a39",
+          "document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0",
+          "section_paths": [
+            "Electricity > Output Loss"
+          ],
+          "similarity": 0.6741244196891785
+        },
+        {
+          "chunk_id": "chunk-268950b23008748d06a2400f6acdb574",
+          "document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0",
+          "section_paths": [
+            "Electricity > Voltage and Amperage > Amperage"
+          ],
+          "similarity": 0.6723308861255646
+        },
+        {
+          "chunk_id": "chunk-a8f441006abca56356cb8a5f143676d6",
+          "document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0",
+          "section_paths": [
+            "Electricity"
+          ],
+          "similarity": 0.6719247996807098
+        },
+        {
+          "chunk_id": "chunk-569da83c1ca37e29f993fb2f4e71c7fa",
+          "document_id": "doc-3dbc9b7b97cfc0b8fbe14bc95a57ccc0",
+          "section_paths": [
+            "Electricity > Voltage and Amperage > Voltage Tiers"
+          ],
+          "similarity": 0.6660474240779877
+        },
+        {
+          "chunk_id": "chunk-4f552df6ef7c8df800ed6524c02be6c5",
+          "document_id": "doc-a509849f031bb1dadb346a8565bf75e8",
+          "section_paths": [
+            "Mega Ultimate Voltage (UMV) > Infrastructure > Power"
+          ],
+          "similarity": 0.6555325984954834
+        },
+        {
+          "chunk_id": "chunk-7d1135ad40ba2cc7dab530a017e5c5f6",
+          "document_id": "doc-a9f4f7813df646e0e5f0ab08ab29b50e",
+          "section_paths": [
+            "Ludicrous Voltage (LuV) > Infrastructure > Circuits"
+          ],
+          "similarity": 0.6530187129974365
+        },
+        {
+          "chunk_id": "chunk-13f2a5b1d10ed9bdd4d1926cef51033b",
+          "document_id": "doc-d8847ae5c01144e82bc225fe54375054",
+          "section_paths": [
+            "Zero Point Module (ZPM) > Progression > Fusion Reactor Mk2"
+          ],
+          "similarity": 0.6503063142299652
+        },
+        {
+          "chunk_id": "chunk-47bd42d0723648a06b4d9ebfc6552d28",
+          "document_id": "doc-709fa05c9dc5e6bdd1e4979266413ad2",
+          "section_paths": [
+            "Power Generation > Fusion and Plasma"
+          ],
+          "similarity": 0.6497518122196198
+        },
+        {
+          "chunk_id": "chunk-303f0acb1197f3638b42847847bb8637",
+          "document_id": "doc-8bdfdac1b12c28b48cfd59b3c35795d1",
+          "section_paths": [
+            "Highly Ultimate Voltage (UHV) > Infrastructure Improvements > Fusion Reactor Mk4"
+          ],
+          "similarity": 0.6482928991317749
+        }
+      ],
+      "selected_context_ids": [
+        "chunk-5e57a74464432107837c03099bfbc7b6",
+        "chunk-542935792c1f0cfaa3b3c690a0233a39",
+        "chunk-268950b23008748d06a2400f6acdb574"
+      ],
+      "expected_pass": true,
+      "observed_pass": true
+    },
+    {
+      "id": "q03",
+      "query": "What are the override/default/output priorities in an MV EnderIO central ore-processing line?",
+      "relevant": true,
+      "candidates": [
+        {
+          "chunk_id": "chunk-d3c0bb92e25671559f4130abe90a4322",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > MV EnderIO Conduits - The \"Central Line\""
+          ],
+          "similarity": 0.8011417090892792
+        },
+        {
+          "chunk_id": "chunk-ea1cdf7f833544ff246e6a1d3304aed9",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > HV EnderIO Conduits + GT Type Filters"
+          ],
+          "similarity": 0.6958943009376526
+        },
+        {
+          "chunk_id": "chunk-2af9ae10450a56bee00cd16589914c6a",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > Overview of Designs"
+          ],
+          "similarity": 0.6933518946170807
+        },
+        {
+          "chunk_id": "chunk-06d40bd7fed30e57f17a1a25576898d6",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > EV Applied Energistics 2"
+          ],
+          "similarity": 0.6829698085784912
+        },
+        {
+          "chunk_id": "chunk-a61e46971fad35640888a9436665f7b2",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > MV EnderIO Conduits - The \"Central Line\" > The Rest of the Line"
+          ],
+          "similarity": 0.682572990655899
+        },
+        {
+          "chunk_id": "chunk-d57da4c7d38809b79046313a5a427368",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > EV Applied Energistics 2"
+          ],
+          "similarity": 0.6709751784801483
+        },
+        {
+          "chunk_id": "chunk-b91cca541a48a644cc92102fc6a3381b",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > EV Applied Energistics 2"
+          ],
+          "similarity": 0.6563504934310913
+        },
+        {
+          "chunk_id": "chunk-c9c1517071de4cd1d65e85ed12a394c8",
+          "document_id": "doc-d38e0fb2c49edead8e172a0081f57d61",
+          "section_paths": [
+            "Extreme Voltage (EV) > Progression > Side quest 2: Multiblock ore processing"
+          ],
+          "similarity": 0.6550619900226593
+        },
+        {
+          "chunk_id": "chunk-c8e59522b3ff87a5d0822136802a4e00",
+          "document_id": "doc-8bdfdac1b12c28b48cfd59b3c35795d1",
+          "section_paths": [
+            "Highly Ultimate Voltage (UHV) > Infrastructure Improvements > Integrated Ore Factory"
+          ],
+          "similarity": 0.6521234810352325
+        },
+        {
+          "chunk_id": "chunk-899f089c10d9b05623dd29d55ffafa96",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > EV Applied Energistics 2"
+          ],
+          "similarity": 0.6472981572151184
+        }
+      ],
+      "selected_context_ids": [
+        "chunk-d3c0bb92e25671559f4130abe90a4322",
+        "chunk-ea1cdf7f833544ff246e6a1d3304aed9",
+        "chunk-2af9ae10450a56bee00cd16589914c6a"
+      ],
+      "expected_pass": true,
+      "observed_pass": true
+    },
+    {
+      "id": "q06",
+      "query": "What outputs and caveat are listed for chemically processing purified chalcopyrite and tetrahedrite?",
+      "relevant": true,
+      "candidates": [
+        {
+          "chunk_id": "chunk-8bcbd9efb61d54acb8a89a128c69e87b",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > Special Processes"
+          ],
+          "similarity": 0.73972487449646
+        },
+        {
+          "chunk_id": "chunk-7204ffb05b8f1f010ede14e35607675b",
+          "document_id": "doc-0acf46d9067c834f0c19087002ed00b0",
+          "section_paths": [
+            "Insane Voltage (IV) > Progression Goals > Other chemical lines"
+          ],
+          "similarity": 0.7016652822494507
+        },
+        {
+          "chunk_id": "chunk-276643a0048ffc5c80ab0989219ed28d",
+          "document_id": "doc-45ac5ed5cca700a24048b98b03470923",
+          "section_paths": [
+            "Planets > Tier 8"
+          ],
+          "similarity": 0.6880123913288116
+        },
+        {
+          "chunk_id": "chunk-b655e62e5b31e911ea3f185cfd6f0f75",
+          "document_id": "doc-45ac5ed5cca700a24048b98b03470923",
+          "section_paths": [
+            "Planets > Tier 4"
+          ],
+          "similarity": 0.6734729707241058
+        },
+        {
+          "chunk_id": "chunk-65ae19f4f0875a16975b71c9f7385bb0",
+          "document_id": "doc-45ac5ed5cca700a24048b98b03470923",
+          "section_paths": [
+            "Planets > Tier 8"
+          ],
+          "similarity": 0.6686398386955261
+        },
+        {
+          "chunk_id": "chunk-cbb24a351f234cec6664e9144021bcdc",
+          "document_id": "doc-c9afb2e028c318ddc2f228663f5523fe",
+          "section_paths": [
+            "Extremely Ultimate Voltage (UEV) > Progression > Waterline"
+          ],
+          "similarity": 0.6686375737190247
+        },
+        {
+          "chunk_id": "chunk-b91cca541a48a644cc92102fc6a3381b",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > EV Applied Energistics 2"
+          ],
+          "similarity": 0.6672291457653046
+        },
+        {
+          "chunk_id": "chunk-c9be8e2d914b8716772e72eed1d32b83",
+          "document_id": "doc-8666c624815c422fd88b0cdfb5cbfb2a",
+          "section_paths": [
+            "High Voltage (HV) > Progression > Mid-HV"
+          ],
+          "similarity": 0.6642504036426544
+        },
+        {
+          "chunk_id": "chunk-899f089c10d9b05623dd29d55ffafa96",
+          "document_id": "doc-10abece1affc7c7ad6fb4e0605bf710b",
+          "section_paths": [
+            "Ore Processing Concepts > EV Applied Energistics 2"
+          ],
+          "similarity": 0.6613737344741821
+        },
+        {
+          "chunk_id": "chunk-c21e295084a34df53c76527aa37b5b5a",
+          "document_id": "doc-04ef7ad9e1765bcf95cbd804c813863b",
+          "section_paths": [
+            "Ultimate Voltage (UV) > Progression > Waterline"
+          ],
+          "similarity": 0.6591637134552002
+        }
+      ],
+      "selected_context_ids": [
+        "chunk-8bcbd9efb61d54acb8a89a128c69e87b",
+        "chunk-7204ffb05b8f1f010ede14e35607675b",
+        "chunk-276643a0048ffc5c80ab0989219ed28d"
+      ],
+      "expected_pass": true,
+      "observed_pass": true
+    },
+    {
+      "id": "unrelated-1",
+      "query": "What is today's weather forecast for Paris?",
+      "relevant": false,
+      "candidates": [
+        {
+          "chunk_id": "chunk-99cc136d38641f854f4fd51d7104c28a",
+          "document_id": "doc-04ef7ad9e1765bcf95cbd804c813863b",
+          "section_paths": [
+            "Ultimate Voltage (UV) > Progression > Research Station > Quantum Computer"
+          ],
+          "similarity": 0.5638226568698883
+        },
+        {
+          "chunk_id": "chunk-3479f7c04a1a2e72217e53b882f388f3",
+          "document_id": "doc-2e161bb7490c4c12a7e195acd1873420",
+          "section_paths": [
+            "Insanely Ultimate Voltage (UIV) > Infrastructure > Power > Dyson Swarm"
+          ],
+          "similarity": 0.5513961613178253
+        },
+        {
+          "chunk_id": "chunk-31999df98437a688bc59ee797433641e",
+          "document_id": "doc-8666c624815c422fd88b0cdfb5cbfb2a",
+          "section_paths": [
+            "High Voltage (HV) > Progression > First Energy Crisis"
+          ],
+          "similarity": 0.5472730994224548
+        },
+        {
+          "chunk_id": "chunk-692a2c16b62a6206e99975eb0147e9f6",
+          "document_id": "doc-709fa05c9dc5e6bdd1e4979266413ad2",
+          "section_paths": [
+            "Power Generation > Steam"
+          ],
+          "similarity": 0.545560359954834
+        },
+        {
+          "chunk_id": "chunk-497a39244407906588199b4533b2ddfe",
+          "document_id": "doc-04ef7ad9e1765bcf95cbd804c813863b",
+          "section_paths": [
+            "Ultimate Voltage (UV) > Progression > Research Station"
+          ],
+          "similarity": 0.5438528656959534
+        },
+        {
+          "chunk_id": "chunk-f7f5b90c55529af7356929d02c537caf",
+          "document_id": "doc-a9f4f7813df646e0e5f0ab08ab29b50e",
+          "section_paths": [
+            "Ludicrous Voltage (LuV) > Fusion Reactor"
+          ],
+          "similarity": 0.5434379279613495
+        },
+        {
+          "chunk_id": "chunk-888c73bd962261aecef167f2c65e26de",
+          "document_id": "doc-d8847ae5c01144e82bc225fe54375054",
+          "section_paths": [
+            "Zero Point Module (ZPM) > Infrastructure Improvements > Noble Gases"
+          ],
+          "similarity": 0.540483146905899
+        },
+        {
+          "chunk_id": "chunk-0b8b21bd00ef5ef9cc5d3b0afd73098f",
+          "document_id": "doc-709fa05c9dc5e6bdd1e4979266413ad2",
+          "section_paths": [
+            "Power Generation > Benzene"
+          ],
+          "similarity": 0.5398169755935669
+        },
+        {
+          "chunk_id": "chunk-137405157af87dd0f3eee24e6971f51d",
+          "document_id": "doc-626c925b618145e4e43655f7673b36b4",
+          "section_paths": [
+            "Low Voltage (LV) > GT Electric Machines"
+          ],
+          "similarity": 0.5391277372837067
+        },
+        {
+          "chunk_id": "chunk-36719ac8830a6c0cfbd6bb4025343b75",
+          "document_id": "doc-0acf46d9067c834f0c19087002ed00b0",
+          "section_paths": [
+            "Insane Voltage (IV) > Infrastructure > Circuits"
+          ],
+          "similarity": 0.5376392304897308
+        }
+      ],
+      "selected_context_ids": [],
+      "expected_pass": false,
+      "observed_pass": false
+    },
+    {
+      "id": "unrelated-2",
+      "query": "How do I renew a Russian passport?",
+      "relevant": false,
+      "candidates": [
+        {
+          "chunk_id": "chunk-e427064d61547ce907c29852c1a7a9de",
+          "document_id": "doc-d38e0fb2c49edead8e172a0081f57d61",
+          "section_paths": [
+            "Extreme Voltage (EV) > Progression > End of EV"
+          ],
+          "similarity": 0.5716380178928375
+        },
+        {
+          "chunk_id": "chunk-c18096e8b035aa08daa337f0ba995048",
+          "document_id": "doc-8bdfdac1b12c28b48cfd59b3c35795d1",
+          "section_paths": [
+            "Highly Ultimate Voltage (UHV) > Progression > Mothership"
+          ],
+          "similarity": 0.5669471919536591
+        },
+        {
+          "chunk_id": "chunk-51a144f8f720fc6e7a3fb3572ffd6b9b",
+          "document_id": "doc-d38e0fb2c49edead8e172a0081f57d61",
+          "section_paths": [
+            "Extreme Voltage (EV) > Progression > Mid EV"
+          ],
+          "similarity": 0.562177985906601
+        },
+        {
+          "chunk_id": "chunk-f9a7893bcc78ce6dce97919745883b55",
+          "document_id": "doc-8666c624815c422fd88b0cdfb5cbfb2a",
+          "section_paths": [
+            "High Voltage (HV) > Progression > End Of HV"
+          ],
+          "similarity": 0.557204931974411
+        },
+        {
+          "chunk_id": "chunk-d0feb569b22562ab917c598f227b6810",
+          "document_id": "doc-0acf46d9067c834f0c19087002ed00b0",
+          "section_paths": [
+            "Insane Voltage (IV) > Progression Goals > The Platline"
+          ],
+          "similarity": 0.5536564886569977
+        },
+        {
+          "chunk_id": "chunk-1b6d491efdb4fc2baedfbcabae78bc4a",
+          "document_id": "doc-c9afb2e028c318ddc2f228663f5523fe",
+          "section_paths": [
+            "Extremely Ultimate Voltage (UEV) > Side Quests > Not a Noob Certificate"
+          ],
+          "similarity": 0.5527477562427521
+        },
+        {
+          "chunk_id": "chunk-a5f28cb4868a57c9395131f83cfe3cd6",
+          "document_id": "doc-d38e0fb2c49edead8e172a0081f57d61",
+          "section_paths": [
+            "Extreme Voltage (EV) > Progression > Your second rocket / Late-EV"
+          ],
+          "similarity": 0.550568699836731
+        },
+        {
+          "chunk_id": "chunk-7a73ca34781031d9bbcc18c6ceb9fb6f",
+          "document_id": "doc-8666c624815c422fd88b0cdfb5cbfb2a",
+          "section_paths": [
+            "High Voltage (HV) > Side Objectives > Thaumcraft"
+          ],
+          "similarity": 0.5505099296569824
+        },
+        {
+          "chunk_id": "chunk-5b30f915ba6b5e7f521127f16f5d09d8",
+          "document_id": "doc-8666c624815c422fd88b0cdfb5cbfb2a",
+          "section_paths": [
+            "High Voltage (HV) > Side Objectives > Chlorine Automation"
+          ],
+          "similarity": 0.5440441071987152
+        },
+        {
+          "chunk_id": "chunk-3201ae97cdf57f5c4f39b878d3b90cbd",
+          "document_id": "doc-d38e0fb2c49edead8e172a0081f57d61",
+          "section_paths": [
+            "Extreme Voltage (EV) > Progression > Radon Loop"
+          ],
+          "similarity": 0.5416751503944397
+        }
+      ],
+      "selected_context_ids": [],
+      "expected_pass": false,
+      "observed_pass": false
+    },
+    {
+      "id": "unrelated-3",
+      "query": "What is the current price of Apple shares?",
+      "relevant": false,
+      "candidates": [
+        {
+          "chunk_id": "chunk-c7fe9475868cd154a1c7e73956ed4139",
+          "document_id": "doc-04ef7ad9e1765bcf95cbd804c813863b",
+          "section_paths": [
+            "Ultimate Voltage (UV) > Infrastructure Improvements > Component Assembly Line"
+          ],
+          "similarity": 0.5370924174785614
+        },
+        {
+          "chunk_id": "chunk-c2ef669309c2e27db516239e863426fc",
+          "document_id": "doc-a9f4f7813df646e0e5f0ab08ab29b50e",
+          "section_paths": [
+            "Ludicrous Voltage (LuV) > Power > Storage and Distribution"
+          ],
+          "similarity": 0.522122323513031
+        },
+        {
+          "chunk_id": "chunk-4d93e16102e62bf6a06fba27d5a8ea62",
+          "document_id": "doc-626c925b618145e4e43655f7673b36b4",
+          "section_paths": [
+            "Low Voltage (LV) > Revisiting Steam"
+          ],
+          "similarity": 0.5188855826854706
+        },
+        {
+          "chunk_id": "chunk-3722f359e22b0fe36f689fd264d5de95",
+          "document_id": "doc-a509849f031bb1dadb346a8565bf75e8",
+          "section_paths": [
+            "Mega Ultimate Voltage (UMV) > Sidequests > Old Stargate"
+          ],
+          "similarity": 0.5142840147018433
+        },
+        {
+          "chunk_id": "chunk-9119bf0a6527efdfccd26f57ecba60cb",
+          "document_id": "doc-8bdfdac1b12c28b48cfd59b3c35795d1",
+          "section_paths": [
+            "Highly Ultimate Voltage (UHV) > Sidequests > Old Stargate Trophies"
+          ],
+          "similarity": 0.5141671597957611
+        },
+        {
+          "chunk_id": "chunk-24c9b99eb646ef858eb38885a0a84551",
+          "document_id": "doc-4f4c543e0ece55aaf03e88c75a851b04",
+          "section_paths": [
+            "Extended Mega Ultimate Voltage (UXV) > Tier Walkthrough > Extended Mega Ultimate Voltage (UXV) > Extended Mega Ultimate Voltage (UXV) > Extended Mega Ultimate Voltage (UXV) > 1) Eternity and MHDCSM"
+          ],
+          "similarity": 0.511666476726532
+        },
+        {
+          "chunk_id": "chunk-41d14e064737fad3c4cc66570df3faec",
+          "document_id": "doc-4f4c543e0ece55aaf03e88c75a851b04",
+          "section_paths": [
+            "Extended Mega Ultimate Voltage (UXV) > Tier Walkthrough > Extended Mega Ultimate Voltage (UXV) > Extended Mega Ultimate Voltage (UXV) > Extended Mega Ultimate Voltage (UXV) > 4) UXV Upgrades"
+          ],
+          "similarity": 0.5116415917873383
+        },
+        {
+          "chunk_id": "chunk-2579a30500d16c429c46718e21c3ccdf",
+          "document_id": "doc-a509849f031bb1dadb346a8565bf75e8",
+          "section_paths": [
+            "Mega Ultimate Voltage (UMV) > Infrastructure > Quantum Force Transformer"
+          ],
+          "similarity": 0.5111147463321686
+        },
+        {
+          "chunk_id": "chunk-99cc136d38641f854f4fd51d7104c28a",
+          "document_id": "doc-04ef7ad9e1765bcf95cbd804c813863b",
+          "section_paths": [
+            "Ultimate Voltage (UV) > Progression > Research Station > Quantum Computer"
+          ],
+          "similarity": 0.5081842243671417
+        },
+        {
+          "chunk_id": "chunk-3479f7c04a1a2e72217e53b882f388f3",
+          "document_id": "doc-2e161bb7490c4c12a7e195acd1873420",
+          "section_paths": [
+            "Insanely Ultimate Voltage (UIV) > Infrastructure > Power > Dyson Swarm"
+          ],
+          "similarity": 0.5068503320217133
+        }
+      ],
+      "selected_context_ids": [],
+      "expected_pass": false,
+      "observed_pass": false
+    }
+  ],
+  "limitations": [
+    "Calibrated only for this snapshot, embedding fingerprint, strategy and six labeled examples; not a universal cosine threshold.",
+    "Threshold rejects unrelated query examples, not unsupported individual facts.",
+    "ContextK=3 excludes q03 expected Rest of the Line source at rank 5; threshold retains it among candidates.",
+    "Three positive questions overlap the control set; evaluation is not a held-out benchmark."
+  ]
+}

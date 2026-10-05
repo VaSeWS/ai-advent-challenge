@@ -4,7 +4,7 @@
 #   .claude/skills/record-task-demo/scripts/record.sh week-01/day-02/video/demo.sh [out.mp4]
 #
 # Opens a dedicated Terminal window, plays the demo in it, captures that
-# screen rect with the macOS built-in screencapture, and stops as soon as
+# window with macOS ScreenCaptureKit, and stops as soon as
 # the demo ends. Output defaults to day-NN-demo.mp4 next to the demo script.
 #
 # Needs Screen Recording permission for the terminal app running this
@@ -12,8 +12,8 @@
 # Recording) and a restart of that app after granting it.
 #
 # Knobs (env): X, Y, W, H (window rect in points), TIMEOUT (seconds to wait
-# for the demo), ENV_FILE (defaults to <repo>/.env), CAPTURE_WINDOW=1
-# (record the Terminal window even when it is on another Space).
+# for the demo), ENV_FILE (defaults to <repo>/.env), CAPTURE_WINDOW=0
+# (opt into screen-rectangle capture instead of the owned Terminal window).
 
 set -euo pipefail
 
@@ -42,8 +42,8 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 X=${X:-40}; Y=${Y:-60}; W=${W:-1280}; H=${H:-800}
-TIMEOUT=${TIMEOUT:-300}
-CAPTURE_WINDOW=${CAPTURE_WINDOW:-0}
+TIMEOUT=${TIMEOUT:-7200}
+CAPTURE_WINDOW=${CAPTURE_WINDOW:-1}
 
 fail() { printf 'error: %s\n' "$1" >&2; exit 1; }
 
@@ -66,6 +66,10 @@ work=$(mktemp -d -t taskdemo)
 launcher="$work/launch.sh"
 done_flag="$work/done"
 status_file="$work/exit-status"
+capture_ready="$work/capture-ready"
+if [ "$CAPTURE_WINDOW" = 1 ]; then
+    swiftc "$REPO_ROOT/.claude/skills/record-task-demo/scripts/record-window.swift" -o "$work/record-window"
+fi
 
 # The launcher reads the key itself, so no secret ever reaches the Terminal
 # window, the AppleScript, or this script's arguments.
@@ -73,14 +77,23 @@ cat > "$launcher" <<LAUNCHER
 #!/usr/bin/env bash
 set -uo pipefail
 cd "$REPO_ROOT"
-for key in GROQ_API_KEY YANDEX_DISK_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
+for key in GROQ_API_KEY DEEPSEEK_API_KEY YANDEX_DISK_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
     if [ -z "\${!key:-}" ] && [ -f "$ENV_FILE" ]; then
         value=\$(grep -m1 "^\${key}=" "$ENV_FILE" | cut -d= -f2- | tr -d '"')
         export "\$key=\$value"
     fi
 done
-bash "$DEMO"
-status=\$?
+for ((attempt = 0; attempt < 300; attempt++)); do
+    [ -f "$capture_ready" ] && break
+    sleep 0.1
+done
+if [ -f "$capture_ready" ]; then
+    bash "$DEMO"
+    status=\$?
+else
+    printf 'error: recorder did not become ready\n' >&2
+    status=1
+fi
 printf '%s\n' "\$status" > "$status_file"
 touch "$done_flag"
 exit "\$status"
@@ -92,26 +105,37 @@ if [ -n "$DAY" ] && [ -d "$REPO_ROOT/week-0$WEEK/day-$DAY" ]; then
     (cd "$REPO_ROOT" && go build -o /dev/null "./week-0$WEEK/day-$DAY") >/dev/null 2>&1 || true
 fi
 
-osascript >/dev/null <<APPLESCRIPT
+window_id=$(osascript <<APPLESCRIPT
+set profileName to system attribute "DEMO_TERMINAL_PROFILE"
 tell application "Terminal"
     activate
-    do script "clear; exec '$launcher'"
-    delay 0.4
-    set bounds of front window to {$X, $Y, $((X + W)), $((Y + H))}
+    set demoTab to do script "clear; exec '$launcher'"
+    set demoTTY to tty of demoTab
+    repeat with demoWindow in windows
+        repeat with candidateTab in tabs of demoWindow
+            if tty of candidateTab is demoTTY then
+                if profileName is not "" then set current settings of demoWindow to settings set profileName
+                set bounds of demoWindow to {$X, $Y, $((X + W)), $((Y + H))}
+                return id of demoWindow
+            end if
+        end repeat
+    end repeat
+    error "could not locate the demo Terminal window"
 end tell
 APPLESCRIPT
+) || fail "could not open the demo Terminal window"
+[[ "$window_id" =~ ^[1-9][0-9]*$ ]] ||
+    fail "Terminal returned an invalid demo window ID"
 
 sleep 2
 
 rm -f "$OUT"
 if [ "$CAPTURE_WINDOW" = 1 ]; then
-    window_id=$(osascript -e 'tell application "Terminal" to get id of front window' 2>/dev/null) ||
-        fail "could not get Terminal front window ID"
-    [[ "$window_id" =~ ^[1-9][0-9]*$ ]] ||
-        fail "Terminal returned an invalid front window ID"
-    screencapture -v -x -l "$window_id" "$OUT" &
+    # The launcher tab owns this window; never recapture an unrelated front window.
+    "$work/record-window" "$window_id" "$OUT" "$capture_ready" &
 else
     screencapture -v -x -R "$X,$Y,$W,$H" "$OUT" &
+    touch "$capture_ready"
 fi
 rec_pid=$!
 
@@ -122,7 +146,12 @@ while [ ! -f "$done_flag" ] && [ "$waited" -lt "$TIMEOUT" ]; do
 done
 
 kill -INT "$rec_pid" 2>/dev/null || true
-wait "$rec_pid" 2>/dev/null || true
+recorder_status=0
+wait "$rec_pid" || recorder_status=$?
+if [ "$CAPTURE_WINDOW" = 1 ] && [ "$recorder_status" -ne 0 ]; then
+    rm -rf "$work"
+    fail "window recorder exited with status $recorder_status; failed recording retained at $OUT"
+fi
 
 [ -s "$OUT" ] || {
     rm -rf "$work"
