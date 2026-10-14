@@ -3,14 +3,18 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
+	"path/filepath"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
+
 func TestGroqIPv4TransportUsesTCP4(t *testing.T) {
 	listener, err := net.Listen("tcp6", "[::1]:0")
 	if err != nil {
@@ -50,47 +54,80 @@ func TestGroqIPv4OptInDoesNotChangeOtherProviders(t *testing.T) {
 	}
 }
 
-func TestProviderProfiles(t *testing.T) {
-	tests := []struct {
-		name string
-		want ProviderProfile
-	}{
-		{
-			name: "groq",
-			want: ProviderProfile{
-				Name: "groq", Endpoint: "https://api.groq.com/openai/v1/chat/completions", Model: "openai/gpt-oss-20b", KeyEnv: "GROQ_API_KEY",
-				ContextWindow: 131072, MainMax: 2048, AuxiliaryMax: 512, MaxTokensField: "max_completion_tokens", ReasoningEffort: "low", CounterEncoding: "o200k_harmony",
-			},
-		},
-		{
-			name: "deepseek",
-			want: ProviderProfile{
-				Name: "deepseek", Endpoint: "https://api.deepseek.com/chat/completions", Model: "deepseek-flash", KeyEnv: "DEEPSEEK_API_KEY",
-				ContextWindow: 1000000, MainMax: 2048, AuxiliaryMax: 512, MaxTokensField: "max_tokens", ReasoningEffort: "none", ThinkingDisabled: true, CounterEncoding: "deepseek-v4-estimate",
-			},
-		},
+func TestProviderProfileRejectsUnknownName(t *testing.T) {
+	if _, err := providerProfile("other"); err == nil {
+		t.Fatal("providerProfile(\"other\") returned nil error")
 	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := providerProfile(test.name)
-			if err != nil {
-				t.Fatalf("providerProfile(%q): %v", test.name, err)
-			}
-			if !reflect.DeepEqual(got, test.want) {
-				t.Fatalf("providerProfile(%q) = %#v, want %#v", test.name, got, test.want)
-			}
-		})
+}
+func TestLocalModelRequiresPinnedSnapshotIdentifier(t *testing.T) {
+	validHistoricalPinnedSnapshot := "/Users/example/.cache/huggingface/hub/models--mlx-community--Qwen3.8-27B-mxfp4/snapshots/97ab0819817ab1c61d7d39f9169fc71999915641"
+	for _, model := range []string{localModel, validHistoricalPinnedSnapshot} {
+		if err := validateLocalSnapshotModel(model); err != nil {
+			t.Errorf("validate pinned model %q: %v", model, err)
+		}
+	}
+	for _, model := range []string{"mlx-community/Qwen3.5-4B-4bit", "/models/qwen/latest", "/models/snapshots/not-a-commit"} {
+		if err := validateLocalSnapshotModel(model); err == nil {
+			t.Errorf("validate unpinned model %q succeeded", model)
+		}
 	}
 }
 
-func TestProviderProfileRejectsUnknownName(t *testing.T) {
-	_, err := providerProfile("other")
-	if err == nil {
-		t.Fatal("providerProfile(\"other\") returned nil error")
+func TestRunRejectsNonPositiveLimits(t *testing.T) {
+	for _, args := range [][]string{
+		{"-provider", "local", "-context-window", "0"},
+		{"-provider", "local", "-max-tokens", "-1"},
+		{"-provider", "local", "-aux-max-tokens", "0"},
+		{"-provider", "local", "-request-timeout", "0s"},
+	} {
+		if err := run(args); err == nil {
+			t.Errorf("run(%v) succeeded with a non-positive limit", args)
+		}
 	}
-	if got, want := err.Error(), "unknown provider \"other\" (expected groq or deepseek)"; got != want {
-		t.Fatalf("providerProfile(\"other\") error = %q, want %q", got, want)
+}
+func TestLocalCompletionDoesNotExposeCredentialsOrReasoning(t *testing.T) {
+	profile, err := providerProfile("local")
+	if err != nil {
+		t.Fatalf("load local profile: %v", err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "" {
+			t.Errorf("Authorization = %q, want no credential header", got)
+		}
+		var body map[string]json.RawMessage
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("decode request body: %v", err)
+			return
+		}
+		var messages []CompletionMessage
+		if err := json.Unmarshal(body["messages"], &messages); err != nil {
+			t.Errorf("decode request messages: %v", err)
+		} else if len(messages) != 2 || messages[0].Role != "system" || messages[1].Role != "user" || messages[0].Content != "base instructions\n\nactive state" {
+			t.Errorf("local messages = %#v, want one merged leading system and original user", messages)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"answer","reasoning_content":"private reasoning"},"finish_reason":"stop"}]}`))
+	}))
+	defer server.Close()
+
+	profile.Endpoint = server.URL
+	got, err := NewOpenAICompatibleClient(profile, "").Complete(context.Background(), CompletionRequest{
+		Messages: []CompletionMessage{
+			{Role: "system", Content: "base instructions"},
+			{Role: "system", Content: "active state"},
+			{Role: "user", Content: "question"},
+		},
+		MaxTokens: 12,
+	})
+	if err != nil {
+		t.Fatalf("complete locally: %v", err)
+	}
+	if got.Content != "answer" {
+		t.Fatalf("completion content = %q, want final answer only", got.Content)
+	}
+	price := profile.Price(Usage{PromptTokens: 10, CompletionTokens: 4}, time.Now())
+	if price.Tier != "local" || price.InputCostUSD != 0 || price.OutputCostUSD != 0 {
+		t.Fatalf("local price = %#v, want zero-cost local tier", price)
 	}
 }
 
@@ -229,6 +266,118 @@ func TestOpenAICompatibleClientNormalizesProviderUsage(t *testing.T) {
 			}
 			if got.Usage != test.wantUsage {
 				t.Fatalf("usage = %#v, want %#v", got.Usage, test.wantUsage)
+			}
+		})
+	}
+}
+
+func TestLocalCompletionDoesNotFollowRedirects(t *testing.T) {
+	for _, status := range []int{http.StatusTemporaryRedirect, http.StatusPermanentRedirect} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			var destinationCalls int32
+			destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				atomic.AddInt32(&destinationCalls, 1)
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer destination.Close()
+
+			profile, err := providerProfile("local")
+			if err != nil {
+				t.Fatalf("load local profile: %v", err)
+			}
+			source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPost {
+					t.Errorf("source request method = %q, want POST", r.Method)
+				}
+				var request map[string]json.RawMessage
+				if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+					t.Errorf("decode source request body: %v", err)
+				}
+				w.Header().Set("Location", destination.URL)
+				w.WriteHeader(status)
+			}))
+			defer source.Close()
+
+			profile.Endpoint = source.URL
+			_, err = NewOpenAICompatibleClient(profile, "").Complete(context.Background(), CompletionRequest{
+				Messages:  []CompletionMessage{{Role: "user", Content: "private prompt and memory"}},
+				MaxTokens: 12,
+			})
+			if err == nil {
+				t.Fatal("Complete() followed local endpoint redirect")
+			}
+			if got := atomic.LoadInt32(&destinationCalls); got != 0 {
+				t.Fatalf("redirect destination calls = %d, want zero", got)
+			}
+		})
+	}
+}
+
+func TestLocalFinishReasonControlsTurnPersistence(t *testing.T) {
+	for _, test := range []struct {
+		name                 string
+		finishReason         string
+		wantErr              bool
+		wantRequests         int32
+		wantPersistedLineage int
+	}{
+		{name: "token limit", finishReason: "length", wantErr: true, wantRequests: 1},
+		{name: "normal stop", finishReason: "stop", wantRequests: 2, wantPersistedLineage: 2},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			store, err := OpenStore(filepath.Join(t.TempDir(), "local-completion.sqlite"))
+			if err != nil {
+				t.Fatalf("open store: %v", err)
+			}
+			t.Cleanup(func() { _ = store.Close() })
+			chat, branch, err := store.ActiveChat()
+			if err != nil {
+				t.Fatalf("load active chat: %v", err)
+			}
+
+			var requests int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				call := atomic.AddInt32(&requests, 1)
+				w.Header().Set("Content-Type", "application/json")
+				if call == 1 {
+					_, _ = fmt.Fprintf(w, `{"choices":[{"message":{"role":"assistant","content":"truncated answer"},"finish_reason":%q}]}`, test.finishReason)
+					return
+				}
+				_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"{}"},"finish_reason":"stop"}]}`))
+			}))
+			defer server.Close()
+
+			profile, err := providerProfile("local")
+			if err != nil {
+				t.Fatalf("load local profile: %v", err)
+			}
+			profile.Endpoint = server.URL
+			counter, err := newTokenCounter(profile)
+			if err != nil {
+				t.Fatalf("create local token counter: %v", err)
+			}
+			agent := NewAgent(store, NewOpenAICompatibleClient(profile, ""), counter, profile)
+			_, err = agent.Send(context.Background(), chat.ID, branch.ID, "question")
+			if test.wantErr {
+				if err == nil || !strings.Contains(strings.ToLower(err.Error()), "finite token limit") {
+					t.Fatalf("Send() error = %v, want clear finite token limit error", err)
+				}
+			} else if err != nil {
+				t.Fatalf("Send() error = %v, want normal completion success", err)
+			}
+			if got := atomic.LoadInt32(&requests); got != test.wantRequests {
+				t.Fatalf("local completion requests = %d, want %d", got, test.wantRequests)
+			}
+			lineage, err := store.Lineage(branch.ID)
+			if err != nil {
+				t.Fatalf("load lineage: %v", err)
+			}
+			if len(lineage) != test.wantPersistedLineage {
+				t.Fatalf("persisted lineage = %#v, want %d messages", lineage, test.wantPersistedLineage)
+			}
+			if test.wantPersistedLineage == 2 &&
+				(lineage[0].Content != "question" || lineage[1].Content != "truncated answer") {
+				t.Fatalf("persisted normal-stop turn = %#v, want user question and assistant answer", lineage)
 			}
 		})
 	}

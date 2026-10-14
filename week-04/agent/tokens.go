@@ -38,6 +38,12 @@ func (deepSeekCounter) Count(text string) int {
 func (deepSeekCounter) Label() string { return "deepseek-v4-estimate" }
 func (deepSeekCounter) Exact() bool   { return false }
 
+type qwenEstimateCounter struct{ deepSeekCounter }
+
+func (qwenEstimateCounter) Label() string { return "qwen-estimate" }
+
+func (qwenEstimateCounter) Exact() bool { return false }
+
 var (
 	o200kHarmonyOnce   sync.Once
 	o200kHarmonyEngine omnitoken.ModelEngine
@@ -48,6 +54,8 @@ func newTokenCounter(profile ProviderProfile) (TokenCounter, error) {
 	switch profile.CounterEncoding {
 	case "deepseek-v4-estimate":
 		return deepSeekCounter{}, nil
+	case "qwen-estimate":
+		return qwenEstimateCounter{}, nil
 	case "o200k_harmony":
 		o200kHarmonyOnce.Do(func() {
 			o200kHarmonyEngine, o200kHarmonyErr = omnitoken.ForEncoding(omnitoken.EncodingO200KHarmony)

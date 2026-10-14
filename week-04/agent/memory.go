@@ -19,6 +19,60 @@ const (
 Корневые разделы необязательны, но каждый присутствующий profile, task или records обязан быть непустым; {} — единственный ответ без обновлений. profile может содержать только language, response_style, response_format и constraints. task может содержать только goal, plan, current_step и expected_action. Каждый record обязан содержать ровно scope profile или task, kind decision или knowledge, и непустые string key/value. Снаружи строк убираются пробелы; key приводится к lowercase, внутренние пробелы заменяются на -, и затем обязан состоять только из a-z, 0-9, ., _ или -. Не повторяй records с одинаковым нормализованным (scope, kind, key). Не выбирай профиль, не меняй task phase или паузу, не создавай и не меняй invariants.`
 )
 
+// localMemoryResponseFormat is a package-private static native schema envelope
+// for local memory extraction. Keep it aligned with the prompt and parser; no
+// root required/minProperties constraint is intentional so {} remains valid.
+var localMemoryResponseFormat = json.RawMessage(`{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "memory_update",
+    "strict": true,
+    "schema": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "object",
+          "properties": {
+            "language": {"type": "string", "minLength": 1},
+            "response_style": {"type": "string", "minLength": 1},
+            "response_format": {"type": "string", "minLength": 1},
+            "constraints": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false,
+          "minProperties": 1
+        },
+        "task": {
+          "type": "object",
+          "properties": {
+            "goal": {"type": "string", "minLength": 1},
+            "plan": {"type": "string", "minLength": 1},
+            "current_step": {"type": "string", "minLength": 1},
+            "expected_action": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false,
+          "minProperties": 1
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scope": {"type": "string", "enum": ["profile", "task"]},
+              "kind": {"type": "string", "enum": ["decision", "knowledge"]},
+              "key": {"type": "string", "minLength": 1, "pattern": "^[a-z0-9._-]+$"},
+              "value": {"type": "string", "minLength": 1}
+            },
+            "required": ["scope", "kind", "key", "value"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}`)
+
 // MemoryScope identifies the active owner to which a long-term candidate will
 // be routed. It never identifies a profile or task by ID; routing always uses
 // the currently active owner.
@@ -82,9 +136,9 @@ type MemoryExtractionState struct {
 // one completed turn. It returns a new message slice on every call and makes
 // absent active owners explicit so the extractor cannot invent their updates.
 func BuildMemoryExtractionPrompt(input, response string, state MemoryExtractionState) []CompletionMessage {
+	stateBlock := MemoryExtractionStateBlock(state)
 	return []CompletionMessage{
-		{Role: "system", Content: MemoryExtractionInstruction},
-		{Role: "system", Content: MemoryExtractionStateBlock(state)},
+		{Role: "system", Content: MemoryExtractionInstruction + "\n\n" + stateBlock},
 		{Role: "user", Content: "Пользователь сообщил:\n" + input},
 		{Role: "assistant", Content: "Ассистент ответил:\n" + response},
 	}

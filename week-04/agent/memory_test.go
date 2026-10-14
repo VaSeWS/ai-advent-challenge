@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -116,37 +117,31 @@ func TestParseMemoryUpdateJSONDoesNotMutatePreexistingUpdateOnError(t *testing.T
 	}
 }
 
-func TestBuildMemoryExtractionPromptHasFixedTurnShape(t *testing.T) {
+func TestBuildMemoryExtractionPromptUsesSingleLeadingSystemMessage(t *testing.T) {
 	state := MemoryExtractionState{
-		Profile: &Profile{
-			Name:           "default",
-			Language:       "English",
-			ResponseStyle:  "concise",
-			ResponseFormat: "bullets",
-			Constraints:    "no emojis",
-		},
-		Task: &Task{
-			Goal:           "Ship parser",
-			Plan:           "Write strict decoder",
-			Phase:          TaskPhasePlanning,
-			CurrentStep:    "Implement parser",
-			ExpectedAction: "Run offline tests",
-			Paused:         false,
-		},
-		Invariants: []Invariant{
-			{ID: 2, Category: "storage", Key: "database", RequiredValue: "SQLite", Rule: "Use SQLite.", Source: "user"},
-			{ID: 1, Category: "architecture", Key: "transport", RequiredValue: "HTTP", Rule: "Use HTTP.", Source: "user"},
-		},
+		Profile: &Profile{Name: "default", Language: "English"},
+		Task:    &Task{Goal: "Ship parser", Phase: TaskPhasePlanning},
 	}
 	prompt := BuildMemoryExtractionPrompt("remember this", "I will", state)
-	want := []CompletionMessage{
-		{Role: "system", Content: MemoryExtractionInstruction},
-		{Role: "system", Content: "Активный профиль (обновлять можно только его):\nname: default\nlanguage: English\nresponse_style: concise\nresponse_format: bullets\nconstraints: no emojis\n\nАктивная задача (не меняй phase или paused):\ngoal: Ship parser\nplan: Write strict decoder\nphase: planning\ncurrent_step: Implement parser\nexpected_action: Run offline tests\npaused: false\n\nАктивные invariants:\narchitecture.transport = HTTP; rule: Use HTTP.; source: user\nstorage.database = SQLite; rule: Use SQLite.; source: user"},
-		{Role: "user", Content: "Пользователь сообщил:\nremember this"},
-		{Role: "assistant", Content: "Ассистент ответил:\nI will"},
+	if len(prompt) != 3 || prompt[0].Role != "system" || prompt[1].Role != "user" || prompt[2].Role != "assistant" {
+		t.Fatalf("prompt roles = %#v, want one leading system, then user and assistant", prompt)
 	}
-	if !reflect.DeepEqual(prompt, want) {
-		t.Fatalf("memory prompt = %#v, want %#v", prompt, want)
+	systemMessages := 0
+	for _, message := range prompt {
+		if message.Role == "system" {
+			systemMessages++
+		}
+	}
+	if systemMessages != 1 {
+		t.Fatalf("system message count = %d, want exactly one", systemMessages)
+	}
+	if !strings.Contains(prompt[0].Content, MemoryExtractionInstruction) ||
+		!strings.Contains(prompt[0].Content, MemoryExtractionStateBlock(state)) {
+		t.Fatal("leading system message omitted extraction instructions or active state")
+	}
+	if prompt[1].Content != "Пользователь сообщил:\nremember this" ||
+		prompt[2].Content != "Ассистент ответил:\nI will" {
+		t.Fatalf("turn messages = %#v, want original user and assistant turn content", prompt[1:])
 	}
 }
 

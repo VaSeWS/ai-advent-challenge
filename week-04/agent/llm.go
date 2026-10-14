@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
 type Completer interface {
@@ -24,7 +23,16 @@ type OpenAICompatibleClient struct {
 }
 
 func NewOpenAICompatibleClient(profile ProviderProfile, key string) *OpenAICompatibleClient {
-	httpClient := &http.Client{Timeout: 60 * time.Second}
+	timeout := profile.RequestTimeout
+	if timeout == 0 {
+		timeout = defaultRemoteRequestTimeout
+	}
+	httpClient := &http.Client{Timeout: timeout}
+	if profile.Name == "local" {
+		httpClient.CheckRedirect = func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 	if profile.Name == "groq" && os.Getenv("GROQ_IPV4") == "1" {
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		dialer := &net.Dialer{}
@@ -37,9 +45,17 @@ func NewOpenAICompatibleClient(profile ProviderProfile, key string) *OpenAICompa
 }
 
 func (c *OpenAICompatibleClient) Complete(ctx context.Context, req CompletionRequest) (Completion, error) {
+	messages := req.Messages
+	if c.profile.Name == "local" {
+		var err error
+		messages, err = localProviderMessages(messages)
+		if err != nil {
+			return Completion{}, err
+		}
+	}
 	body := map[string]any{
 		"model":                  c.profile.Model,
-		"messages":               req.Messages,
+		"messages":               messages,
 		c.profile.MaxTokensField: req.MaxTokens,
 	}
 	if len(req.Tools) > 0 {
@@ -56,6 +72,15 @@ func (c *OpenAICompatibleClient) Complete(ctx context.Context, req CompletionReq
 	if c.profile.ThinkingDisabled {
 		body["thinking"] = map[string]string{"type": "disabled"}
 	}
+	if c.profile.Name == "local" && req.Kind == "memory" {
+		body["enable_thinking"] = false
+		body["response_format"] = localMemoryResponseFormat
+	} else if c.profile.ThinkingEnabled {
+		body["enable_thinking"] = true
+	}
+	if c.profile.Name == "local" && c.profile.ThinkingEnabled && req.Kind == "main" && c.profile.ThinkingBudget > 0 && req.MaxTokens > c.profile.ThinkingBudget {
+		body["thinking_budget"] = c.profile.ThinkingBudget
+	}
 
 	payload, err := json.Marshal(body)
 	if err != nil {
@@ -65,7 +90,9 @@ func (c *OpenAICompatibleClient) Complete(ctx context.Context, req CompletionReq
 	if err != nil {
 		return Completion{}, err
 	}
-	httpReq.Header.Set("Authorization", "Bearer "+c.key)
+	if c.profile.Name != "local" {
+		httpReq.Header.Set("Authorization", "Bearer "+c.key)
+	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	response, err := c.http.Do(httpReq)
@@ -91,12 +118,38 @@ func (c *OpenAICompatibleClient) Complete(ctx context.Context, req CompletionReq
 	}
 
 	choice := decoded.Choices[0]
+	if c.profile.Name == "local" && choice.FinishReason == "length" {
+		return Completion{}, fmt.Errorf("local completion reached its finite token limit (finish_reason %q)", choice.FinishReason)
+	}
 	return Completion{
 		Content:      choice.Message.Content,
 		ToolCalls:    choice.Message.ToolCalls,
 		Usage:        decoded.Usage.normalized(),
 		FinishReason: choice.FinishReason,
 	}, nil
+}
+func localProviderMessages(messages []CompletionMessage) ([]CompletionMessage, error) {
+	firstNonSystem := 0
+	var system strings.Builder
+	for firstNonSystem < len(messages) && messages[firstNonSystem].Role == "system" {
+		if system.Len() > 0 {
+			system.WriteString("\n\n")
+		}
+		system.WriteString(messages[firstNonSystem].Content)
+		firstNonSystem++
+	}
+	for _, message := range messages[firstNonSystem:] {
+		if message.Role == "system" {
+			return nil, fmt.Errorf("local provider requires system instructions before conversation messages")
+		}
+	}
+	if firstNonSystem <= 1 {
+		return messages, nil
+	}
+	normalized := make([]CompletionMessage, 1, len(messages)-firstNonSystem+1)
+	normalized[0] = CompletionMessage{Role: "system", Content: system.String()}
+	normalized = append(normalized, messages[firstNonSystem:]...)
+	return normalized, nil
 }
 
 type completionAPIResponse struct {

@@ -115,6 +115,19 @@ demo_repo_root() {
 
 TUI_TMUX_DIR=
 TUI_TMUX_SOCKET=
+TUI_TMUX_OWNER_FILE=
+TUI_TMUX_OWNER_IDENTITY=
+TUI_TMUX_SOCKET_IDENTITY=
+TUI_TMUX_SERVER_PID=
+TUI_TMUX_SERVER_PGID=
+TUI_TMUX_SERVER_STATE=
+TUI_TMUX_SERVER_START=
+TUI_TMUX_SERVER_JOINED=
+TUI_TMUX_SERVER_EXIT=
+TUI_TMUX_PANE_PID=
+TUI_TMUX_PANE_STATE=
+TUI_TMUX_PANE_START=
+TUI_TMUX_PANE_PGID=
 TUI_SESSION=${TUI_SESSION:-"demo-${UID:-user}-$$-${RANDOM}"}
 
 demo_tui_require() {
@@ -125,16 +138,208 @@ demo_tui_require() {
     }
 }
 
-# Start the program detached inside a tmux session.
-demo_tmux() { tmux -S "$TUI_TMUX_SOCKET" "$@"; }
+demo_tui_state() {
+    if [ -n "${DEMO_PRIVATE_TMUX_STATE_FILE:-}" ]; then
+        printf '%s\n' "$1" > "$DEMO_PRIVATE_TMUX_STATE_FILE" || return 1
+    fi
+}
+demo_tmux() {
+    tmux -N -S "$TUI_TMUX_SOCKET" "$@"
+}
+
+# Return "pgid|state|start-time" for one process, status 1 if absent, and
+# status 2 if the process table could not be inspected.
+demo_tui_process_record() {
+    local wanted_pid=$1 process_table line current_pid current_pgid current_state start_time
+    process_table=$(LC_ALL=C /bin/ps -ax -o pid= -o pgid= -o stat= -o lstart= 2>/dev/null) || return 2
+    while IFS= read -r line; do
+        read -r current_pid current_pgid current_state start_time <<< "$line"
+        if [ "$current_pid" = "$wanted_pid" ]; then
+            printf '%s|%s|%s\n' "$current_pgid" "$current_state" "$start_time"
+            return 0
+        fi
+    done <<< "$process_table"
+    return 1
+}
+
+# Statuses: 0 is the exact live process, 1 is absent/zombie, 2 is an
+# inspection failure, and 3 is a PID whose recorded start identity mismatches.
+demo_tui_owned_process_is_active() {
+    local record status current_state current_start
+    if record=$(demo_tui_process_record "$1"); then
+        current_state=${record#*|}
+        current_state=${current_state%%|*}
+        current_start=${record##*|}
+        if [ "$current_start" != "$2" ]; then
+            return 3
+        fi
+        case "$current_state" in
+            *Z*) return 1 ;;
+        esac
+        return 0
+    else
+        status=$?
+        return "$status"
+    fi
+}
+
+# Return 0 when a live process remains in the recorded pane process group,
+# 1 when it is empty (zombies are not running workload), and 2 if inspection
+# failed.
+demo_tui_process_group_present() {
+    local wanted_pgid=$1 process_table line current_pgid current_state
+    process_table=$(LC_ALL=C /bin/ps -ax -o pgid= -o stat= 2>/dev/null) || return 2
+    while IFS= read -r line; do
+        read -r current_pgid current_state <<< "$line"
+        if [ "$current_pgid" = "$wanted_pgid" ]; then
+            case "$current_state" in
+                *Z*) continue ;;
+                *) return 0 ;;
+            esac
+        fi
+    done <<< "$process_table"
+    return 1
+}
+
+demo_tui_socket_identity() {
+    [ -S "$TUI_TMUX_SOCKET" ] && [ ! -L "$TUI_TMUX_SOCKET" ] || return 1
+    /usr/bin/stat -f '%d:%i' "$TUI_TMUX_SOCKET"
+}
+
+demo_tui_write_owner() {
+    local lifecycle=$1 current_identity
+    [ -f "$TUI_TMUX_OWNER_FILE" ] && [ ! -L "$TUI_TMUX_OWNER_FILE" ] || return 1
+    current_identity=$(/usr/bin/stat -f '%d:%i' "$TUI_TMUX_OWNER_FILE") || return 1
+    [ "$current_identity" = "$TUI_TMUX_OWNER_IDENTITY" ] || return 1
+    {
+        printf 'state=%s\n' "$lifecycle"
+        printf 'directory=%s\n' "$TUI_TMUX_DIR"
+        printf 'socket=%s\n' "$TUI_TMUX_SOCKET"
+        printf 'socket_identity=%s\n' "$TUI_TMUX_SOCKET_IDENTITY"
+        printf 'server_pid=%s\n' "$TUI_TMUX_SERVER_PID"
+        printf 'server_pgid=%s\n' "$TUI_TMUX_SERVER_PGID"
+        printf 'server_state=%s\n' "$TUI_TMUX_SERVER_STATE"
+        printf 'server_exit_status=%s\n' "$TUI_TMUX_SERVER_EXIT"
+        printf 'server_start=%s\n' "$TUI_TMUX_SERVER_START"
+        printf 'pane_pid=%s\n' "$TUI_TMUX_PANE_PID"
+        printf 'pane_state=%s\n' "$TUI_TMUX_PANE_STATE"
+        printf 'pane_start=%s\n' "$TUI_TMUX_PANE_START"
+        printf 'pane_pgid=%s\n' "$TUI_TMUX_PANE_PGID"
+    } > "$TUI_TMUX_OWNER_FILE"
+}
 
 demo_tui_start() {
     local cmd=$1 cols=${2:-100} rows=${3:-30}
+    local attempt server_record actual_server_pid pane_record server_fields pane_fields
     demo_tui_require
-    TUI_TMUX_DIR=$(mktemp -d "${TMPDIR:-/tmp}/taskdemo-tmux.XXXXXX")
+    if [ -n "$TUI_TMUX_DIR" ] || [ -n "$TUI_TMUX_SOCKET" ]; then
+        printf '%serror: a private TUI lifecycle is already active or unreconciled%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    fi
+    demo_tui_state starting || return 1
+    TUI_TMUX_DIR=$(mktemp -d "${TMPDIR:-/tmp}/taskdemo-tmux.XXXXXX") || return 1
     TUI_TMUX_SOCKET="$TUI_TMUX_DIR/server.sock"
-    demo_tmux new-session -d -s "$TUI_SESSION" -x "$cols" -y "$rows" "$cmd"
+    if [ -n "${DEMO_PRIVATE_TMUX_STATE_FILE:-}" ]; then
+        TUI_TMUX_OWNER_FILE="${DEMO_PRIVATE_TMUX_STATE_FILE}.owner"
+    else
+        TUI_TMUX_OWNER_FILE="${TUI_TMUX_DIR}.owner"
+    fi
+    if [ -e "$TUI_TMUX_OWNER_FILE" ] || [ -L "$TUI_TMUX_OWNER_FILE" ]; then
+        printf '%serror: private tmux owner record already exists: %s%s\n' \
+            "$DEMO_RED" "$TUI_TMUX_OWNER_FILE" "$DEMO_RESET" >&2
+        return 1
+    fi
+    (
+        umask 077
+        set -C
+        : > "$TUI_TMUX_OWNER_FILE"
+    ) || return 1
+    TUI_TMUX_OWNER_IDENTITY=$(/usr/bin/stat -f '%d:%i' "$TUI_TMUX_OWNER_FILE") || return 1
+    demo_tui_write_owner starting || return 1
+
+    # Retain the foreground server as a child, but keep its stdio off the
+    # recording TTY: tmux refuses to attach a client to its server's TTY.
+    # -D disables exit-empty for this private server only.
+    tmux -D -f /dev/null -S "$TUI_TMUX_SOCKET" </dev/null >/dev/null 2>&1 &
+    TUI_TMUX_SERVER_PID=$!
+    demo_tui_write_owner starting || return 1
+    for ((attempt = 0; attempt < 100; attempt++)); do
+        if [ -S "$TUI_TMUX_SOCKET" ] && [ ! -L "$TUI_TMUX_SOCKET" ]; then
+            break
+        fi
+        /bin/sleep 0.02 || return 1
+    done
+    TUI_TMUX_SOCKET_IDENTITY=$(demo_tui_socket_identity) || {
+        printf '%serror: private tmux server did not create its owned socket%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    }
+    demo_tui_write_owner starting || return 1
+    server_record=$(demo_tui_process_record "$TUI_TMUX_SERVER_PID") || {
+        printf '%serror: private tmux server identity is unavailable%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    }
+    TUI_TMUX_SERVER_PGID=${server_record%%|*}
+    server_fields=${server_record#*|}
+    TUI_TMUX_SERVER_STATE=${server_fields%%|*}
+    TUI_TMUX_SERVER_START=${server_record##*|}
+    demo_tui_write_owner starting || return 1
+    case "$TUI_TMUX_SERVER_STATE" in
+        *Z*)
+            printf '%serror: private tmux server exited before startup completed%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+            ;;
+    esac
+    actual_server_pid=$(demo_tmux display-message -p '#{pid}') || {
+        printf '%serror: private tmux server did not accept its owned socket%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    }
+    if [ "$actual_server_pid" != "$TUI_TMUX_SERVER_PID" ]; then
+        printf '%serror: private tmux socket resolved to an unowned server%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    fi
+    demo_tui_write_owner starting || return 1
+
+    demo_tmux new-session -d -s "$TUI_SESSION" -x "$cols" -y "$rows" "$cmd" || return 1
+    TUI_TMUX_PANE_PID=$(demo_tmux display-message -p -t "$TUI_SESSION" '#{pane_pid}') || {
+        printf '%serror: private TUI pane identity is unavailable%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    }
+    demo_tui_write_owner starting || return 1
+    case "$TUI_TMUX_PANE_PID" in
+        ''|*[!0-9]*)
+            printf '%serror: private TUI pane returned an invalid PID%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+            ;;
+    esac
+    pane_record=$(demo_tui_process_record "$TUI_TMUX_PANE_PID") || {
+        printf '%serror: private TUI pane start identity is unavailable%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    }
+    TUI_TMUX_PANE_PGID=${pane_record%%|*}
+    pane_fields=${pane_record#*|}
+    TUI_TMUX_PANE_STATE=${pane_fields%%|*}
+    TUI_TMUX_PANE_START=${pane_record##*|}
+    demo_tui_write_owner starting || return 1
+    case "$TUI_TMUX_PANE_STATE" in
+        *Z*)
+            printf '%serror: private TUI pane exited before startup completed%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+            ;;
+    esac
+    demo_tui_write_owner running || return 1
+    demo_tui_state running || return 1
 }
+
 
 # Type text into the running TUI, one character at a time (visible typing).
 demo_tui_type() {
@@ -215,24 +420,261 @@ demo_tui_wait_stable() {
     done
 }
 
-# Attach the recording terminal to the TUI session when there is a real tty
-# to attach from (the Terminal.app window record.sh opens); otherwise this is
-# a dry run with no tty, so just wait for the caller's background sender
-# and print the final pane content for inspection.
+# Attach the recording terminal to the TUI session when there is a real tty;
+# otherwise this is a dry run with no tty, so just wait for the caller's
+# background sender and print the final pane content for inspection.
 demo_tui_watch() {
+    local child_pids child_pid wait_status=0
     if [ -t 1 ] && [ -t 0 ]; then
         demo_tmux attach -t "$TUI_SESSION"
     else
-        if [ $# -gt 0 ]; then wait "$1"; else wait; fi
+        if [ $# -gt 0 ]; then
+            wait "$1"
+        else
+            child_pids=$(jobs -pr)
+            while IFS= read -r child_pid; do
+                if [ -n "$child_pid" ] && [ "$child_pid" != "$TUI_TMUX_SERVER_PID" ]; then
+                    if wait "$child_pid"; then :; else wait_status=$?; fi
+                fi
+            done <<< "$child_pids"
+            [ "$wait_status" -eq 0 ] || return "$wait_status"
+        fi
         demo_tmux capture-pane -t "$TUI_SESSION" -p 2>/dev/null || true
     fi
 }
 
-demo_tui_stop() {
-    if [ -n "$TUI_TMUX_SOCKET" ]; then
-        demo_tmux kill-server 2>/dev/null || true
-        rm -rf "$TUI_TMUX_DIR"
-        TUI_TMUX_DIR=
-        TUI_TMUX_SOCKET=
+demo_tui_socket_has_no_holder() {
+    local output status
+    if ! command -v lsof >/dev/null 2>&1; then
+        printf '%serror: lsof is unavailable; private tmux socket ownership is unconfirmed%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 2
     fi
+    output=$(lsof +w -nP -a -U "$TUI_TMUX_SOCKET" 2>&1)
+    status=$?
+    if [ "$status" -eq 1 ] && [ -z "$output" ]; then
+        return 0
+    fi
+    if [ -n "$output" ]; then
+        printf '%serror: private tmux socket holder check was inconclusive or found a holder: %s%s\n' \
+            "$DEMO_RED" "$output" "$DEMO_RESET" >&2
+    else
+        printf '%serror: private tmux socket holder check exited with status %s%s\n' \
+            "$DEMO_RED" "$status" "$DEMO_RESET" >&2
+    fi
+    return 1
+}
+
+demo_tui_stop() {
+    local process_status actual_server_pid command_output command_status
+    local pane_status group_status current_socket_identity owner_identity
+    if [ -z "$TUI_TMUX_DIR" ] && [ -z "$TUI_TMUX_SOCKET" ]; then
+        return 0
+    fi
+    if [ -z "$TUI_TMUX_DIR" ] || [ -z "$TUI_TMUX_SOCKET" ] ||
+        [ -z "$TUI_TMUX_SERVER_PID" ] || [ -z "$TUI_TMUX_SERVER_START" ] ||
+        [ -z "$TUI_TMUX_SOCKET_IDENTITY" ] || [ -z "$TUI_TMUX_PANE_PID" ] ||
+        [ -z "$TUI_TMUX_PANE_START" ] || [ -z "$TUI_TMUX_PANE_PGID" ]; then
+        printf '%serror: private tmux ownership evidence is incomplete; retaining its state%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    fi
+    demo_tui_write_owner stopping || {
+        printf '%serror: private tmux owner record changed or is unavailable%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    }
+
+    if demo_tui_owned_process_is_active "$TUI_TMUX_SERVER_PID" "$TUI_TMUX_SERVER_START"; then
+        if [ ! -S "$TUI_TMUX_SOCKET" ] || [ -L "$TUI_TMUX_SOCKET" ]; then
+            printf '%serror: owned tmux server is live but its socket identity is missing%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+        current_socket_identity=$(demo_tui_socket_identity) || {
+            printf '%serror: private tmux socket identity could not be read%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        }
+        if [ "$current_socket_identity" != "$TUI_TMUX_SOCKET_IDENTITY" ]; then
+            printf '%serror: private tmux socket identity changed; refusing shutdown%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+        if actual_server_pid=$(demo_tmux display-message -p '#{pid}' 2>&1); then
+            if [ "$actual_server_pid" != "$TUI_TMUX_SERVER_PID" ]; then
+                printf '%serror: private tmux socket belongs to a different server%s\n' \
+                    "$DEMO_RED" "$DEMO_RESET" >&2
+                return 1
+            fi
+            if command_output=$(demo_tmux kill-server 2>&1); then
+                command_status=0
+            else
+                command_status=$?
+            fi
+            if demo_tui_owned_process_is_active "$TUI_TMUX_SERVER_PID" "$TUI_TMUX_SERVER_START"; then
+                if [ "$command_status" -ne 0 ]; then
+                    printf '%serror: private tmux shutdown failed: %s%s\n' \
+                        "$DEMO_RED" "$command_output" "$DEMO_RESET" >&2
+                    return 1
+                fi
+            else
+                process_status=$?
+                if [ "$process_status" -ne 1 ]; then
+                    printf '%serror: private tmux server liveness is unconfirmed%s\n' \
+                        "$DEMO_RED" "$DEMO_RESET" >&2
+                    return 1
+                fi
+                if [ "$command_status" -ne 0 ]; then
+                    printf 'private tmux server exited during shutdown; reconciling recorded identities (status %s): %s\n' \
+                        "$command_status" "$command_output" >&2
+                fi
+            fi
+        else
+            command_output=$actual_server_pid
+            if demo_tui_owned_process_is_active "$TUI_TMUX_SERVER_PID" "$TUI_TMUX_SERVER_START"; then
+                printf '%serror: private tmux server could not be queried: %s%s\n' \
+                    "$DEMO_RED" "$command_output" "$DEMO_RESET" >&2
+                return 1
+            else
+                process_status=$?
+                if [ "$process_status" -ne 1 ]; then
+                    printf '%serror: private tmux server liveness is unconfirmed%s\n' \
+                        "$DEMO_RED" "$DEMO_RESET" >&2
+                    return 1
+                fi
+                printf 'private tmux server exited during shutdown; reconciling recorded identities: %s\n' \
+                    "$command_output" >&2
+            fi
+        fi
+    else
+        process_status=$?
+        if [ "$process_status" -ne 1 ]; then
+            printf '%serror: private tmux server liveness is unconfirmed%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+    fi
+
+    if [ "$TUI_TMUX_SERVER_JOINED" != 1 ]; then
+        if wait "$TUI_TMUX_SERVER_PID"; then
+            TUI_TMUX_SERVER_EXIT=0
+        else
+            TUI_TMUX_SERVER_EXIT=$?
+        fi
+        TUI_TMUX_SERVER_JOINED=1
+    fi
+    if demo_tui_owned_process_is_active "$TUI_TMUX_SERVER_PID" "$TUI_TMUX_SERVER_START"; then
+        printf '%serror: owned tmux server remains live after joining its child%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    else
+        process_status=$?
+        if [ "$process_status" -ne 1 ]; then
+            printf '%serror: private tmux server exit could not be confirmed%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+    fi
+
+    if demo_tui_owned_process_is_active "$TUI_TMUX_PANE_PID" "$TUI_TMUX_PANE_START"; then
+        printf '%serror: owned TUI pane process is still live%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    else
+        pane_status=$?
+        if [ "$pane_status" -ne 1 ]; then
+            printf '%serror: owned TUI pane process liveness is unconfirmed%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+    fi
+    if demo_tui_process_group_present "$TUI_TMUX_PANE_PGID"; then
+        printf '%serror: owned TUI pane process group is still live%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    else
+        group_status=$?
+        if [ "$group_status" -ne 1 ]; then
+            printf '%serror: owned TUI pane process group liveness is unconfirmed%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+    fi
+
+    if [ -e "$TUI_TMUX_SOCKET" ] || [ -L "$TUI_TMUX_SOCKET" ]; then
+        if [ ! -S "$TUI_TMUX_SOCKET" ] || [ -L "$TUI_TMUX_SOCKET" ]; then
+            printf '%serror: private tmux socket path was replaced; refusing removal%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+        current_socket_identity=$(demo_tui_socket_identity) || {
+            printf '%serror: private tmux socket identity could not be read%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        }
+        if [ "$current_socket_identity" != "$TUI_TMUX_SOCKET_IDENTITY" ]; then
+            printf '%serror: private tmux socket identity changed; refusing removal%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+        demo_tui_socket_has_no_holder || return 1
+        current_socket_identity=$(demo_tui_socket_identity) || {
+            printf '%serror: private tmux socket changed before removal%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        }
+        if [ "$current_socket_identity" != "$TUI_TMUX_SOCKET_IDENTITY" ]; then
+            printf '%serror: private tmux socket identity changed before removal%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+        rm "$TUI_TMUX_SOCKET" || return 1
+        if [ -e "$TUI_TMUX_SOCKET" ] || [ -L "$TUI_TMUX_SOCKET" ]; then
+            printf '%serror: private tmux socket removal is unconfirmed%s\n' \
+                "$DEMO_RED" "$DEMO_RESET" >&2
+            return 1
+        fi
+    fi
+
+    if [ "$TUI_TMUX_SERVER_EXIT" != 0 ]; then
+        printf 'private tmux server exited with status %s; recorded process and socket checks confirm cleanup\n' \
+            "$TUI_TMUX_SERVER_EXIT" >&2
+    fi
+    demo_tui_write_owner stopped || {
+        printf '%serror: could not record confirmed private tmux shutdown%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    }
+    owner_identity=$(/usr/bin/stat -f '%d:%i' "$TUI_TMUX_OWNER_FILE") || return 1
+    if [ "$owner_identity" != "$TUI_TMUX_OWNER_IDENTITY" ]; then
+        printf '%serror: private tmux owner record changed before cleanup%s\n' \
+            "$DEMO_RED" "$DEMO_RESET" >&2
+        return 1
+    fi
+    if ! rmdir "$TUI_TMUX_DIR"; then
+        printf '%serror: private tmux directory is not empty; retaining it at %s%s\n' \
+            "$DEMO_RED" "$TUI_TMUX_DIR" "$DEMO_RESET" >&2
+        return 1
+    fi
+    if [ -z "${DEMO_PRIVATE_TMUX_STATE_FILE:-}" ]; then
+        rm "$TUI_TMUX_OWNER_FILE" || return 1
+    fi
+    demo_tui_state stopped || return 1
+
+    TUI_TMUX_DIR=
+    TUI_TMUX_SOCKET=
+    TUI_TMUX_OWNER_FILE=
+    TUI_TMUX_OWNER_IDENTITY=
+    TUI_TMUX_SOCKET_IDENTITY=
+    TUI_TMUX_SERVER_PID=
+    TUI_TMUX_SERVER_PGID=
+    TUI_TMUX_SERVER_STATE=
+    TUI_TMUX_SERVER_START=
+    TUI_TMUX_SERVER_JOINED=
+    TUI_TMUX_SERVER_EXIT=
+    TUI_TMUX_PANE_PID=
+    TUI_TMUX_PANE_STATE=
+    TUI_TMUX_PANE_START=
+    TUI_TMUX_PANE_PGID=
 }

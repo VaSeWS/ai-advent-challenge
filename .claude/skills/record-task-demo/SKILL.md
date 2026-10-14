@@ -87,17 +87,98 @@ find here than in a take. Fix and repeat until it is clean.
 .claude/skills/record-task-demo/scripts/record.sh week-NN/day-NN/video/demo.sh
 ```
 
-It checks the Screen Recording permission, opens a dedicated 1280×800
-Terminal window and captures that exact window with ScreenCaptureKit
-(macOS 15+ and Xcode Command Line Tools). With this default backend, the demo
-starts only after the recorder is ready, and other windows or Spaces do not
-enter the recording.
-It stops when the demo ends and prints the output and Yandex.Disk paths.
-Tell the user not to close or resize the demo window while it runs.
-`DEMO_TERMINAL_PROFILE` optionally selects an existing Terminal profile.
-`CAPTURE_WINDOW=0` explicitly selects legacy screen-rectangle capture with
-`screencapture`; it has no readiness signal. In that mode, do not touch the
-screen during recording.
+Run it from an owned interactive Terminal tab for the direct path. If a
+standard tool invocation has no TTY on stdin or stdout, `record.sh` acquires
+the same fixed project-wide screen lease before any Terminal query or tab
+change. A tab whose Terminal `processes` list is empty is completed and may
+retain its old TTY; only tabs with a nonempty process list participate in live
+TTY uniqueness checks. The newly created tab must itself have live process
+evidence for those checks, so startup that has not produced a process fails
+closed rather than retrying or treating an empty-process tab as live.
+The owned window ID is still checked against every pre-call window, including
+completed tabs. Before sending the supervisor command, it
+rechecks that the exact original TTY is still the selected tab, the owned
+window is still frontmost, and the new tab's bounded shell process list
+contains only an allowlisted local shell while Terminal reports it idle. It
+launches only in that exact tab and requires the returned TTY and window
+identity to match. No existing tab receives a command, and the window is
+never resized or moved. The one-use private local socket transfers the
+already-held lease to the real tab. Kernel-authenticated peer PID and a ticket
+bind demo/output, both process start identities, host, lease token/inode,
+Terminal identity, and actual TTY. The caller's environment is sent only over
+that authenticated private channel so the owned tab runs with the same
+exported settings and credentials; it is never put in the command line, lease
+metadata, or logs. The rendezvous is removed under the lease before the
+descriptor transfer. The parent waits for the child's adoption and
+relinquishment acknowledgments and final status; it does not release the lease
+after handoff. Busy or unreconciled ownership fails before any Terminal query
+or tab creation. A missing, mismatched, interrupted, or partial handoff
+retains the lease metadata for explicit reconciliation; a pending rendezvous
+is retained only until it is safely removed before transfer. Never kill a PID
+based only on metadata.
+
+The child watches the authenticated parent channel while setting up and
+capturing. Parent SIGINT/SIGTERM requests cancellation; the child stops only
+its retained direct children, finalizes or retains uncertain capture/work
+files, and reports whether lease release was confirmed. Channel loss follows
+the same owned cleanup path; unconfirmed cleanup keeps the lease for
+reconciliation.
+
+The new owned tab is measured and captured using the existing viewport
+guard. No existing tab is resized or moved. The viewport excludes the native
+tab header (macOS 15+ and Xcode Command Line Tools). Ambiguous tab identity,
+unsupported geometry, or changed selection fails closed. The demo starts only
+after real recorder readiness.
+Do not switch tabs, close the tab, change its font, or resize its window during
+the take. `DEMO_TERMINAL_PROFILE` optionally applies an existing profile to
+the owned tab. `CAPTURE_WINDOW=0` and `W/H/X/Y` overrides are rejected.
+Successful output is atomically published without overwriting any existing
+path. A finalization cleanup error still returns nonzero even if that output
+already exists; reconcile before treating the take as accepted or uploading.
+Failed or unconfirmed takes remain local and must not be uploaded.
+
+The supervisor exclusively creates one fixed project-wide
+`.omp/task-execute/runs/.screen-recording.lock` before any Terminal identity
+query, tab/profile change, viewport measurement, or compiler/recorder/demo
+launch. Different days and output paths compete for the same lease; there is
+no environment override or bypass. Its private metadata records a random
+ownership token, PID, host, demo/task, acquisition time, and lifecycle paths
+and child PIDs as they become known, never credentials.
+Busy or unreconciled ownership fails closed before protected actions. Queue
+the next take and retry only after the owner confirms release; do not poll the
+recorder or steal a lease based on its age or PID.
+The lease lasts through child and private-workload cleanup. Direct children
+receive the caller's pre-spawn signal mask before their workload is exec'd;
+the supervisor retains each actual child handle while protecting publication
+from pending SIGINT/SIGTERM. Confirmed stop allows release only when file
+identity and token still match. Unknown shutdown, metadata mismatch, crash, or
+SIGKILL retains the lease for explicit reconciliation. Reconciliation must
+establish that the owner and referenced compiler, recorder, demo, and private
+workload have stopped before removing the recorded lease; never replace or
+edit it while the owner may still be running. This protocol coordinates
+cooperating recording processes, not hostile processes: identity/token checks
+do not make filesystem rename/unlink races atomic against an out-of-band
+replacer. A retained failed take is not acceptance or permission to upload.
+
+Each TUI demo starts its own foreground tmux server on a random mode-0700
+socket directory; client commands use `-N` so a missing server is never
+respawned. A private `.owner` sidecar records the server and pane PIDs with
+their start identities, the pane process group, and the socket device/inode.
+Shutdown joins the retained server child and confirms the pane process/group
+has stopped. A stale socket is removed only when no process holds it and its
+recorded device/inode still matches; unknown process state, a holder, or an
+identity mismatch leaves the private-workload state and files for
+reconciliation.
+
+With recording, the sidecar is included in required supervisor-owned private
+work cleanup. `stop_confirmed` becomes true only after that cleanup succeeds.
+Failure cleaning work or an otherwise-disposable capture directory keeps the
+project lease, reports the exact path, and returns nonzero even if output was
+already published. Standalone helpers remove the sidecar after the empty TUI
+directory. Global or user tmux sessions are not stopped.
+
+`record-supervisor.py --permission-preflight` checks only authorization and
+does not acquire this lease.
 
 If the permission is missing the script says so and does nothing else: the
 user has to enable their terminal app in System Settings > Privacy & Security
@@ -165,11 +246,13 @@ before printing this block — don't guess it.
 
 ## Key safety
 
-`GROQ_API_KEY`, `DEEPSEEK_API_KEY` and `YANDEX_DISK_TOKEN` must never appear in a frame. The
-keys live in `.env` and `record.sh` passes them through a temporary launcher,
-so neither reaches the Terminal window, the AppleScript, or a process
-argument. When the demo needs to show that a key is being used, type a
-masked line instead:
+Credentials (`GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `YANDEX_DISK_TOKEN`,
+`DAY30_SERVICE_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) must never
+appear in a frame or process argument. Export required values before starting:
+`record.sh` does not load `.env`. The Python supervisor and demo workload inherit
+the exported environment; compiler, recorder, and Terminal automation helpers
+remove the six listed variables. Keep credentials out of typed commands,
+process arguments, logs, and frames. Show configured keys only as masked text:
 
 ```bash
 demo_run_masked 'export GROQ_API_KEY=gsk_••••••••••••••••••••••••' 'true'
@@ -186,7 +269,7 @@ Never `echo` the variable, never `env | grep`, never `cat .env`.
 └── scripts/
     ├── demolib.sh               typing effect, prompt, shot helpers
     ├── dryrun.sh                instant replay of a demo, real commands
-    ├── record.sh                owned Terminal window + recording lifecycle
+    ├── record.sh                selected Terminal text viewport + lifecycle
     ├── record-window.swift      desktop-independent ScreenCaptureKit → .mp4
     └── upload_yadisk.sh         local MCP client invocation + public link
 ```
@@ -197,11 +280,10 @@ day's `video/`); only the demo script is committed.
 ## Troubleshooting
 
 - **Empty or missing .mp4** — Screen Recording permission, see step 5.
-- **Text too small to read** — raise the Terminal profile font to 16-18 pt
-  before recording, or shrink the window with `W=1100 H=700 record.sh …`.
-- **Demo runs past the frame** — long model answers scroll; cut the prompt or
-  add `-max-tokens` where the day supports it.
-- **Recording longer than the demo** — `record.sh` stops one second after the
-  demo exits; a hung command is the usual cause, check with `dryrun.sh`.
-- **Mouse pointer in frame** — the default window recorder hides it. In
-  legacy rectangle mode, move the pointer outside the capture rect.
+- **Text too small to read** — set the owned tab's actual font to 16–18 pt
+  before recording; shared-window layout overrides are unsupported.
+- **Demo runs past the frame** — paginate or scroll real output readably;
+  do not truncate a required answer merely to shorten the video.
+- **Unconfirmed shutdown** — inspect the retained take and lifecycle state;
+  do not upload it or start another generation until ownership is reconciled.
+- **Mouse pointer in frame** — the ScreenCaptureKit recorder hides it.
