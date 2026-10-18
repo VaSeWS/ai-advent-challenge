@@ -1,0 +1,25 @@
+{
+  "source_repo": "https://github.com/VaSeWS/iRon_fork",
+  "source_checkout": "../iRon-ai-review",
+  "source_sha": "cb76b89633554e1dd7f288087054f30b00bd9a55",
+  "source_paths": [
+    "README.md",
+    "LICENSE"
+  ],
+  "source_lines": {
+    "README.md": [
+      "3-7",
+      "61-63",
+      "67-69",
+      "75-77",
+      "83-108",
+      "114-116",
+      "122-130",
+      "136-144"
+    ],
+    "LICENSE": [
+      "1-21"
+    ]
+  },
+  "note": "This corpus uses the explicitly selected iRon-ai-review checkout snapshot at source_sha. The checkout was chosen as the documentation source; no claim is made that it is chronologically newer. Synthetic support corpus and CRM data; no Windows runtime proof. Product behavior is represented from the cited upstream documentation only."
+}

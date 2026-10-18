@@ -1,0 +1,90 @@
+{
+  "users": [
+    {
+      "id": "driver-1",
+      "name": "Водитель 1 (синтетический профиль)",
+      "app_version": "demo snapshot based on iRon documentation at cb76b89633554e1dd7f288087054f30b00bd9a55",
+      "windows": "Windows 11 (synthetic scenario)",
+      "environment": "Синтетический учебный профиль; фактический запуск iRon на Windows не проверялся."
+    },
+    {
+      "id": "driver-2",
+      "name": "Водитель 2 (синтетический профиль)",
+      "app_version": "demo snapshot based on iRon documentation at cb76b89633554e1dd7f288087054f30b00bd9a55",
+      "windows": "Windows 11 (synthetic scenario)",
+      "environment": "Синтетический учебный профиль; фактический запуск iRon на Windows не проверялся."
+    }
+  ],
+  "tickets": [
+    {
+      "id": "IRON-101",
+      "user_id": "driver-1",
+      "subject": "Как включить ghost в Delta",
+      "status": "open",
+      "description": "Синтетический сценарий: пользователь сообщает, что параметр ghost в Delta установлен в off, и спрашивает, как показать ghost.",
+      "config": {
+        "ghost": "off"
+      },
+      "checks": [
+        "Сообщённое значение параметра config.json: ghost = off"
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "В Delta нет ghost, в конфиге вижу ghost: off. Как включить?"
+        }
+      ]
+    },
+    {
+      "id": "IRON-102",
+      "user_id": "driver-1",
+      "subject": "Ghost в Delta не отображается; значение неизвестно",
+      "status": "open",
+      "description": "Синтетический сценарий: пользователь не сообщил текущее значение параметра ghost; нужно запросить его из config.json, не угадывать конфигурацию.",
+      "config": {},
+      "checks": [
+        "Текущее значение ghost не предоставлено пользователем"
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "В Delta не вижу ghost. Что проверить?"
+        }
+      ]
+    },
+    {
+      "id": "IRON-103",
+      "user_id": "driver-1",
+      "subject": "Перемещение и изменение размера overlays",
+      "status": "in_progress",
+      "description": "Синтетический сценарий: пользователь пытался перезапустить приложение, но расположение overlays не изменилось; нужно подсказать документированный режим перемещения/изменения размера.",
+      "config": {},
+      "checks": [
+        "Пользователь сообщил, что уже пробовал перезапустить приложение"
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Перезапуск уже пробовал. Как передвинуть и изменить размер overlays?"
+        }
+      ]
+    },
+    {
+      "id": "IRON-201",
+      "user_id": "driver-2",
+      "subject": "Overlays ещё не видны до выхода в машину",
+      "status": "open",
+      "description": "Синтетический сценарий: пользователь ещё не находится в машине в iRacing и спрашивает, когда должны появиться overlays.",
+      "config": {},
+      "checks": [
+        "Пользователь ещё не сообщил, что находится в машине в iRacing"
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Я ещё не в машине в iRacing, а overlays пока не появились. Когда они должны появиться? Какой режим окна рекомендует README?"
+        }
+      ]
+    }
+  ]
+}

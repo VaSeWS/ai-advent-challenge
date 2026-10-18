@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11151b">
+  <title>iRon · поддержка</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="tickets-panel" aria-label="Обращения поддержки">
+      <a class="brand" href="#top" aria-label="iRon, поддержка">
+        <span class="brand-mark" aria-hidden="true">i</span>
+        <span><strong>iRon</strong><small>центр поддержки</small></span>
+      </a>
+      <div class="demo-note"><span class="demo-dot" aria-hidden="true"></span>Демонстрация · данные синтетические</div>
+      <label class="field-label" for="user-select">Профиль пользователя</label>
+      <select id="user-select" disabled aria-describedby="demo-identity"><option>Загрузка…</option></select>
+      <p class="identity-hint" id="demo-identity">Тестовая личность, не авторизация</p>
+      <div class="tickets-heading"><h2>Обращения</h2><span id="ticket-count" class="count-pill">—</span></div>
+      <nav id="ticket-list" class="ticket-list" aria-label="Список обращений" aria-busy="true"></nav>
+      <div class="sidebar-footer"><span class="status-led" aria-hidden="true"></span><span>Локальная демо-среда</span></div>
+    </aside>
+
+    <section class="conversation-panel" aria-label="Диалог с поддержкой">
+      <header class="conversation-header">
+        <div class="ticket-title-wrap">
+          <div class="eyebrow" id="ticket-eyebrow">Центр поддержки</div>
+          <h1 id="ticket-title">Ваш помощник iRon</h1>
+          <p id="ticket-subtitle">Выберите обращение, чтобы увидеть его контекст.</p>
+        </div>
+        <div id="ticket-status" class="ticket-status" hidden></div>
+      </header>
+      <div id="conversation" class="conversation" role="log" aria-label="Сообщения обращения" aria-live="polite" aria-relevant="additions text">
+        <div class="welcome-card">
+          <span class="welcome-icon" aria-hidden="true">✳</span>
+          <p class="eyebrow">Помощник по iRon</p>
+          <h2>Разберёмся вместе</h2>
+          <p>Выберите демонстрационное обращение. Ответы опираются на документацию и контекст обращения.</p>
+          <div class="welcome-proof"><span aria-hidden="true">⌕</span> Сначала факты, затем рекомендации</div>
+        </div>
+      </div>
+      <div id="stream-status" class="stream-status" role="status" aria-live="polite"></div>
+      <div id="error-message" class="error-message" role="alert" hidden></div>
+      <form id="composer" class="composer" autocomplete="off">
+        <label class="visually-hidden" for="message-input">Ваш вопрос помощнику</label>
+        <textarea id="message-input" name="message" rows="2" placeholder="Напишите вопрос по обращению…" disabled></textarea>
+        <div class="composer-footer">
+          <span>Enter — отправить <span aria-hidden="true">·</span> Shift + Enter — новая строка</span>
+          <button id="send-button" type="submit" disabled><span>Отправить</span><span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+    </section>
+
+    <details class="context-panel" id="context-panel" open>
+      <summary class="context-summary">
+        <span><span class="context-overline">КОНТЕКСТ</span><strong>Данные обращения</strong></span>
+        <span class="summary-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="context-body">
+        <section class="context-section" aria-labelledby="request-heading">
+          <div class="section-title"><h2 id="request-heading">Обращение</h2><span class="section-icon" aria-hidden="true">◇</span></div>
+          <p id="context-description" class="context-description muted">Выберите обращение, чтобы загрузить контекст.</p>
+          <dl id="ticket-meta" class="meta-list"></dl>
+        </section>
+        <section class="context-section" aria-labelledby="config-heading">
+          <div class="section-title"><h2 id="config-heading">Конфигурация</h2><span class="context-caption">снимок</span></div>
+          <pre id="ticket-config" class="code-block">—</pre>
+        </section>
+        <section class="context-section" aria-labelledby="checks-heading">
+          <div class="section-title"><h2 id="checks-heading">Проверки</h2></div>
+          <ul id="ticket-checks" class="checks-list"><li class="muted">Нет данных</li></ul>
+        </section>
+        <section class="evidence-section" aria-label="Доказательства ответа">
+          <div class="evidence-heading"><span class="evidence-mark" aria-hidden="true">✳</span><div><strong>Основания ответа</strong><small>Документация и наблюдения</small></div></div>
+          <details class="evidence-details" id="sources-details"><summary><span>Источники</span><span id="source-count" class="count-pill">0</span></summary><div id="sources-list" class="evidence-list"><p class="muted">Источники появятся вместе с ответом.</p></div></details>
+          <details class="evidence-details" id="observations-details"><summary><span>Наблюдения</span><span id="observation-count" class="count-pill">0</span></summary><div id="observations-list" class="evidence-list"><p class="muted">Наблюдения появятся вместе с ответом.</p></div></details>
+        </section>
+        <p class="context-footnote">Контекст относится только к выбранному обращению.</p>
+      </div>
+    </details>
+  </main>
+</body>
+</html>
