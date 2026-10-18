@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Турниры — панель управления</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Панель турниров">
+        <span class="brand-mark" aria-hidden="true">Т</span>
+        <span><strong>Турниры</strong><small>ПАНЕЛЬ УПРАВЛЕНИЯ</small></span>
+      </a>
+      <div class="top-actions">
+        <span id="save-status" class="save-status" role="status">Загрузка данных…</span>
+        <button id="reload-button" class="button button-quiet" type="button">Перезагрузить</button>
+        <button id="save-button" class="button button-primary" type="button" disabled>Сохранить конфигурацию</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="workbench" aria-label="Управление турнирами">
+        <div class="page-heading">
+          <div><p class="eyebrow">АДМИНИСТРИРОВАНИЕ</p><h1>Серия турниров</h1><p class="subheading">Настройте формат и расписание, затем вручную создайте выбранные турниры.</p></div>
+          <span class="demo-badge"><span></span> Демо-режим</span>
+        </div>
+        <div id="global-error" class="notice notice-error" role="alert" hidden></div>
+        <nav class="tabs" aria-label="Разделы панели" role="tablist">
+          <button class="tab is-active" id="tab-template" type="button" role="tab" aria-selected="true" aria-controls="panel-template" data-tab="template">Шаблон</button>
+          <button class="tab" id="tab-schedule" type="button" role="tab" aria-selected="false" aria-controls="panel-schedule" data-tab="schedule">Расписание</button>
+          <button class="tab" id="tab-tournaments" type="button" role="tab" aria-selected="false" aria-controls="panel-tournaments" data-tab="tournaments">Турниры <span id="tournament-count" class="tab-count">0</span></button>
+        </nav>
+        <div class="work-area">
+          <section id="panel-template" class="tab-panel" role="tabpanel" aria-labelledby="tab-template"></section>
+          <section id="panel-schedule" class="tab-panel" role="tabpanel" aria-labelledby="tab-schedule" hidden></section>
+          <section id="panel-tournaments" class="tab-panel" role="tabpanel" aria-labelledby="tab-tournaments" hidden></section>
+        </div>
+      </section>
+
+      <aside class="assistant" aria-label="AI-помощник">
+        <div class="assistant-head">
+          <div class="assistant-icon" aria-hidden="true">✳</div>
+          <div><h2>AI-помощник</h2><p id="provider-status" class="provider-status">Проверяем подключение…</p></div>
+          <span id="provider-dot" class="provider-dot" aria-hidden="true"></span>
+        </div>
+        <div id="chat-messages" class="chat-messages" aria-live="polite" aria-relevant="additions text">
+          <div class="chat-welcome"><strong>Помогу настроить турнир</strong><p>Опишите задачу. Я предложу изменения к текущему черновику — вы решаете, применять ли их.</p></div>
+        </div>
+        <div id="proposal-area" class="proposal-area" hidden></div>
+        <form id="chat-form" class="chat-form">
+          <label class="sr-only" for="chat-input">Сообщение AI-помощнику</label>
+          <textarea id="chat-input" rows="3" placeholder="Например: добавь два раунда…" required></textarea>
+          <div class="chat-form-foot"><span>Изменения не сохраняются автоматически</span><button id="chat-send" class="button button-primary button-send" type="submit">Отправить <span aria-hidden="true">↗</span></button></div>
+        </form>
+      </aside>
+    </main>
+    <footer class="footer"><span>Управление конфигурацией и ручной запуск турниров</span><span>Демо · изменения вступают в силу после сохранения</span></footer>
+  </div>
+</body>
+</html>

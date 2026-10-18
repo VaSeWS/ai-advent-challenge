@@ -1,0 +1,5 @@
+{
+  "id":"demo-1","template_id":"autumn-quiz","schedule_id":"weekday-evening","starts_at":"2026-10-19T20:00:00+03:00","registration_opens_at":"2026-10-18T20:00:00+03:00","registration_closes_at":"2026-10-19T19:00:00+03:00","status":"scheduled",
+  "template_snapshot":{"id":"autumn-quiz","name":"Осенний турнир знаний","description":"Демонстрация накопления баллов.","max_players":128,"entry":{"type":"free","ticket_id":""},"rounds":[{"number":1,"name":"Разминка","description":"Пять коротких вопросов.","duration_minutes":10,"rules":{"attempt_limit":1,"score_aggregation":"best"}}],"rewards":[{"place":1,"type":"points","amount":100}],"tie_policy":"shared_place_full_reward"},
+  "schedule_snapshot":{"id":"weekday-evening","template_id":"autumn-quiz","dtstart":"2026-10-19T20:00:00","timezone":"Europe/Moscow","rrule":"FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR;COUNT=10","registration_open_offset_seconds":-86400,"registration_close_offset_seconds":-3600,"enabled":true}
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/day35/template.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "max_players", "entry", "rounds", "rewards", "tie_policy"],
+  "properties": {
+    "id": {"type":"string","minLength":1}, "name": {"type":"string","minLength":1}, "description":{"type":"string"}, "max_players":{"type":"integer","minimum":1},
+    "entry":{"type":"object","additionalProperties":false,"required":["type","ticket_id"],"properties":{"type":{"enum":["free","ticket"]},"ticket_id":{"type":"string"}}},
+    "rounds":{"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["number","name","description","duration_minutes","rules"],"properties":{"number":{"type":"integer","minimum":1},"name":{"type":"string","minLength":1},"description":{"type":"string"},"duration_minutes":{"type":"integer","minimum":1},"rules":{"type":"object","additionalProperties":false,"required":["attempt_limit","score_aggregation"],"properties":{"attempt_limit":{"type":"integer","minimum":1},"score_aggregation":{"enum":["best","sum"]}}}}}},
+    "rewards":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["place","type","amount"],"properties":{"place":{"type":"integer","minimum":1},"type":{"const":"points"},"amount":{"type":"integer","minimum":0}}}},
+    "tie_policy":{"const":"shared_place_full_reward"}
+  }
+}
